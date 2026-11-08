@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Мигом — подбор проверенных мастеров в Гомеле. Оставьте заявку бесплатно.">
-<title>Мигом — мастера Гомеля</title>
+<meta name="description" content="Мигом Мастер — подбор проверенных мастеров в Гомеле. Оставьте заявку бесплатно.">
+<title>Мигом Мастер — мастера Гомеля</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Manrope:wght@400;500;600;700&display=swap">
 <style>
@@ -144,9 +144,9 @@ footer{background:var(--ink);color:var(--on-ink-muted);border-top:1px solid rgba
 <body>
 <header>
 <div class="wrap nav">
-<a class="logo" href="#top" aria-label="Мигом — на главную">
+<a class="logo" href="#top" aria-label="Мигом Мастер — на главную">
 <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#FFC530"/><path d="M18 5 9 18h6l-2 9 10-14h-6l1-8z" fill="#101A33"/></svg>
-Мигом
+Мигом Мастер
 </a>
 <nav class="nav-links" aria-label="Разделы">
 <a href="#services">Услуги</a>
@@ -156,7 +156,7 @@ footer{background:var(--ink);color:var(--on-ink-muted);border-top:1px solid rgba
 <a href="#pros">Мастерам</a>
 </nav>
 <div class="nav-right">
-<span class="phone">+375 (29) 000-00-00</span>
+<span class="phone">+375 (25) 616-01-36</span>
 <a class="btn btn-spark" href="#order">Найти мастера</a>
 </div>
 </div>
@@ -309,13 +309,13 @@ footer{background:var(--ink);color:var(--on-ink-muted);border-top:1px solid rgba
 <div class="wrap">
 <div class="foot">
 <div>
-<a class="logo" href="#top"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#FFC530"/><path d="M18 5 9 18h6l-2 9 10-14h-6l1-8z" fill="#101A33"/></svg>Мигом</a>
+<a class="logo" href="#top"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#FFC530"/><path d="M18 5 9 18h6l-2 9 10-14h-6l1-8z" fill="#101A33"/></svg>Мигом Мастер</a>
 <p style="margin-top:12px;max-width:30em">Сервис подбора мастеров и специалистов в Гомеле и Гомельском районе.</p>
 </div>
 <div><h3>Клиентам</h3><ul><li><a href="#order">Оставить заявку</a></li><li><a href="#how">Как это работает</a></li><li><a href="#trust">Проверка мастеров</a></li><li><a href="#faq">Вопросы</a></li></ul></div>
-<div><h3>Контакты</h3><ul><li style="user-select:all">+375 (29) 000-00-00</li><li style="user-select:all">info@migom.by</li><li>Ежедневно 8:00–21:00</li><li>г. Гомель</li></ul></div>
+<div><h3>Контакты</h3><ul><li style="user-select:all">+375 (25) 616-01-36</li><li style="user-select:all">info@migom.by</li><li>Ежедневно 8:00–21:00</li><li>г. Гомель</li></ul></div>
 </div>
-<p class="copy">© 2026 Мигом — подбор мастеров в Гомеле</p>
+<p class="copy">© 2026 Мигом Мастер — подбор мастеров в Гомеле</p>
 </div>
 </footer>
 <script>
@@ -356,7 +356,7 @@ if(!phoneOk(rec.phone)) return fail(err,"Проверьте номер теле�
 const b=$("#o-btn"); b.disabled=true; b.textContent="Отправляем…";
 try{ await save("leads",rec);
 $("#orderBox").innerHTML='<div class="done"><span class="big">Заявка принята</span><p>«'+esc(rec.svc)+'», '+esc(rec.area)+' район. Мастера свяжутся с вами по номеру '+esc(rec.phone)+'.</p><button class="btn btn-spark" type="button" onclick="location.reload()">Новая заявка</button></div>';
-}catch(x){ b.disabled=false; b.textContent="Отправить заявку"; fail(err,"Заявка не отправилась. Позвоните нам: +375 (29) 000-00-00."); }
+}catch(x){ b.disabled=false; b.textContent="Отправить заявку"; fail(err,"Заявка не отправилась. Позвоните нам: +375 (25) 616-01-36."); }
 });
 $("#proForm").addEventListener("submit",async e=>{
 e.preventDefault(); const err=$("#p-err"); err.hidden=true;
@@ -366,7 +366,7 @@ if(!phoneOk(rec.phone)) return fail(err,"Проверьте номер теле�
 const b=$("#p-btn"); b.disabled=true; b.textContent="Отправляем…";
 try{ await save("masters",rec);
 $("#proBox").innerHTML='<div class="done" style="color:var(--fg)"><span class="big">Анкета отправлена</span><p>Мы позвоним по номеру '+esc(rec.phone)+', чтобы пройти проверку и подключить заявки.</p></div>';
-}catch(x){ b.disabled=false; b.textContent="Стать мастером"; fail(err,"Анкета не отправилась. Позвоните нам: +375 (29) 000-00-00."); }
+}catch(x){ b.disabled=false; b.textContent="Стать мастером"; fail(err,"Анкета не отправилась. Позвоните нам: +375 (25) 616-01-36."); }
 });
 </script>
 </body>
