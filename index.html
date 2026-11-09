@@ -99,8 +99,8 @@ form.card{background:var(--surface);border:1px solid var(--line);border-radius:2
 .field input,.field select,.field textarea{width:100%;font:500 1rem var(--body);color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:12px 14px}
 .field textarea{min-height:96px;resize:vertical}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--teal);outline:none}
-.when{display:flex;flex-wrap:wrap;gap:8px}
-.when input{position:absolute;opacity:0;pointer-events:none}
+.when{display:flex;flex-wrap:wrap;gap:8px;position:relative}
+.when input{position:absolute;left:0;top:0;width:1px;height:1px;margin:0;opacity:0;pointer-events:none}
 .when label{border:1.5px solid var(--line);border-radius:999px;padding:8px 14px;font-weight:600;font-size:.9rem;cursor:pointer}
 .when input:checked+label{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
 .when input:focus-visible+label{outline:3px solid var(--spark);outline-offset:2px}
