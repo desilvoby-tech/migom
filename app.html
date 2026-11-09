@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Кабинет — Мигом Мастер</title>
+<title>Кабинет — desilvo</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Manrope:wght@400;500;600;700&display=swap">
 <style>
 :root{--bg:#F4F6F9;--surface:#fff;--ink:#101A33;--fg:#141B2D;--muted:#5B6478;--line:#DDE2EB;--spark:#4BAE2F;--teal:#0F8A7E;--danger:#C23B2E;--ok:#1E8E4E;
@@ -66,7 +66,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal)}
 </head>
 <body>
 <header><div class="nav wrap">
-<a class="logo" href="index.html"><i></i>Мигом Мастер</a>
+<a class="logo" href="index.html"><i></i>desilvo</a>
 <a class="l" href="#tasks" data-v="tasks">Задания</a>
 <a class="l" href="#masters" data-v="masters">Мастера</a>
 <a class="l" href="#me" data-v="me">Кабинет</a>
@@ -245,7 +245,7 @@ async function openChat(rid,mid,title){
   chatSub=sb.channel("chat-"+rid+"-"+mid).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:"request_id=eq."+rid},p=>{const m=p.new;if(m.master_id!==mid||list.some(x=>x.id===m.id))return;list.push(m);draw(list);}).subscribe();
   $("#cf").onsubmit=async e=>{e.preventDefault();const f=e.target,b=f.b.value.trim();if(!b)return;f.b.value="";const {data,error}=await sb.from("messages").insert({request_id:rid,master_id:mid,body:b}).select().single();if(error){f.b.value=b;return fail(error);}if(!list.some(x=>x.id===data.id)){list.push(data);draw(list);}};
 }
-function tgBlock(p){return '<div class="item small">'+(p.tg_chat_id?'<div><b>Telegram подключён.</b> Новые задания, отклики и сообщения приходят в бот @migom_master_bot.</div><div><button type="button" class="btn s sm" id="tgoff">Отключить</button></div>':'<div><b>Уведомления в Telegram</b></div><div class="muted">Новые задания, отклики и сообщения — сразу в телефон.</div><div class="acts"><a class="btn sm" target="_blank" rel="noopener" href="https://t.me/migom_master_bot?start='+esc(p.tg_code)+'">Подключить Telegram</a><button type="button" class="btn s sm" onclick="load().then(vMe)">Я подключил</button></div>')+'</div>';}
+function tgBlock(p){return '<div class="item small">'+(p.tg_chat_id?'<div><b>Telegram подключён.</b> Новые задания, отклики и сообщения приходят в бот @desilvo_bot.</div><div><button type="button" class="btn s sm" id="tgoff">Отключить</button></div>':'<div><b>Уведомления в Telegram</b></div><div class="muted">Новые задания, отклики и сообщения — сразу в телефон.</div><div class="acts"><a class="btn sm" target="_blank" rel="noopener" href="https://t.me/desilvo_bot?start='+esc(p.tg_code)+'">Подключить Telegram</a><button type="button" class="btn s sm" onclick="load().then(vMe)">Я подключил</button></div>')+'</div>';}
 function photosBlock(){const ph=master.photos||[];return '<label>Фото работ (до 12)</label><div class="ph">'+ph.map((u,i)=>'<div class="th"><img src="'+esc(u)+'" alt=""><button type="button" data-delph="'+i+'" aria-label="Удалить фото">×</button></div>').join("")+(ph.length<12?'<label class="add">+ Добавить<input type="file" id="phin" accept="image/*" multiple hidden></label>':'')+'</div><span id="phmsg" class="small muted"></span>';}
 async function shrink(file){const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error("Не удалось открыть изображение"));i.src=URL.createObjectURL(file);});const k=Math.min(1,1600/Math.max(img.width,img.height));const c=document.createElement("canvas");c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext("2d").drawImage(img,0,0,c.width,c.height);return await new Promise(r=>c.toBlob(r,"image/jpeg",.85));}
 /* каталог мастеров */
