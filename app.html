@@ -6,17 +6,17 @@
 <title>Кабинет — Мигом Мастер</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Manrope:wght@400;500;600;700&display=swap">
 <style>
-:root{--bg:#F4F6F9;--surface:#fff;--ink:#101A33;--fg:#141B2D;--muted:#5B6478;--line:#DDE2EB;--spark:#FFC530;--teal:#0F8A7E;--danger:#C23B2E;--ok:#1E8E4E;
+:root{--bg:#F4F6F9;--surface:#fff;--ink:#101A33;--fg:#141B2D;--muted:#5B6478;--line:#DDE2EB;--spark:#4BAE2F;--teal:#0F8A7E;--danger:#C23B2E;--ok:#1E8E4E;
 --display:"Unbounded","Manrope",system-ui,sans-serif;--body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif}
 *{box-sizing:border-box}[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 var(--body)}
 a{color:inherit}
 .wrap{max-width:1000px;margin:0 auto;padding:0 16px}
-header{background:var(--ink);color:#F4F6FB;position:sticky;top:0;z-index:5}
+header{background:#fff;color:var(--fg);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
 .nav{display:flex;align-items:center;gap:16px;padding:12px 16px;flex-wrap:wrap}
 .logo{font:800 1.15rem var(--display);text-decoration:none;display:flex;gap:8px;align-items:center}
 .logo i{width:26px;height:26px;border-radius:8px;background:var(--spark);display:inline-block}
-.nav a.l{text-decoration:none;color:#AEB8D0;font-weight:600}.nav a.l:hover,.nav a.l.on{color:#fff}
+.nav a.l{text-decoration:none;color:var(--muted);font-weight:600}.nav a.l:hover,.nav a.l.on{color:var(--fg)}
 .nav .sp{margin-left:auto}
 h1,h2,h3{font-family:var(--display);margin:0;line-height:1.2}
 h1{font-size:1.6rem}h2{font-size:1.2rem}h3{font-size:1rem}
@@ -29,7 +29,7 @@ label{font-weight:700;font-size:.85rem;display:grid;gap:5px}
 input,select,textarea{width:100%;font:500 1rem var(--body);color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px}
 textarea{min-height:80px;resize:vertical}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal)}
-.btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:999px;font:700 .95rem var(--body);padding:11px 20px;cursor:pointer;background:var(--spark);color:var(--ink);text-decoration:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:999px;font:700 .95rem var(--body);padding:11px 20px;cursor:pointer;background:var(--spark);color:#fff;text-decoration:none}
 .btn.s{background:transparent;border:1.5px solid var(--line);color:var(--fg)}
 .btn.sm{padding:7px 14px;font-size:.85rem}
 .btn:disabled{opacity:.5;cursor:default}
@@ -51,17 +51,24 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal)}
 .err{color:var(--danger);font-weight:600}
 .empty{color:var(--muted);text-align:center;padding:20px;border:1.5px dashed var(--line);border-radius:12px}
 .acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ov{position:fixed;inset:0;background:rgba(10,15,30,.5);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.chat{background:var(--surface);border-radius:16px;width:min(560px,100%);max-height:85vh;display:grid;grid-template-rows:auto 1fr auto;gap:12px;padding:18px}
+.msgs{overflow:auto;display:flex;flex-direction:column;gap:8px;min-height:200px}
+.bub{align-self:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:8px 12px;max-width:80%;white-space:pre-wrap;word-break:break-word}
+.bub.me{align-self:flex-end;background:color-mix(in srgb,var(--spark) 18%,transparent)}
+.bub span{display:block;font-size:.7rem;color:var(--muted);margin-top:2px}
 </style>
 </head>
 <body>
 <header><div class="nav wrap">
 <a class="logo" href="index.html"><i></i>Мигом Мастер</a>
+<a class="l" href="#tasks" data-v="tasks">Задания</a>
 <a class="l" href="#masters" data-v="masters">Мастера</a>
 <a class="l" href="#me" data-v="me">Кабинет</a>
 <a class="l" href="#admin" data-v="admin" id="navAdmin" hidden>Админка</a>
 <span class="sp"></span>
 <a class="btn sm" href="index.html#order">Оставить заявку</a>
-<button class="btn s sm" id="logout" hidden style="color:#fff;border-color:#3a4766">Выйти</button>
+<button class="btn s sm" id="logout" hidden>Выйти</button>
 </div></header>
 <main class="wrap" id="view"><div class="empty">Загрузка…</div></main>
 <script src="config.js"></script>
@@ -92,6 +99,7 @@ async function init(){
   sb.auth.onAuthStateChange(async(ev,s)=>{const changed=(s&&s.user.id)!==uid();session=s;if(changed){await load();route();}});
   await load(); addEventListener("hashchange",route); route();
   $("#logout").onclick=async()=>{await sb.auth.signOut();location.hash="#masters";};
+  document.addEventListener("click",e=>{const b=e.target.closest("[data-chat]");if(b){const [r,m,t]=b.dataset.chat.split("|");openChat(+r,m,t);}});
 }
 async function load(){
   profile=master=null;
@@ -106,6 +114,7 @@ function route(){
   document.querySelectorAll(".nav a.l").forEach(a=>a.classList.toggle("on",a.dataset.v===h.split("-")[0]));
   if(h.startsWith("m-")) return vMaster(h.slice(2));
   if(h==="masters") return vMasters();
+  if(h==="tasks") return vTasks();
   if(h==="admin") return vAdmin();
   return session?vMe():vLogin();
 }
@@ -140,11 +149,11 @@ async function tReq(){
   T.innerHTML='<div class="grid" style="grid-template-columns:1fr">'+data.map(r=>{
     const of=offers.filter(o=>o.request_id===r.id), s=ST[r.status];
     let body='';
-    if(r.status==="new") body=of.length?'<h3>Отклики мастеров ('+of.length+')</h3>'+of.map(o=>{const m=o.masters||{};return '<div class="item"><div class="top"><a href="#m-'+m.id+'"><b>'+esc(m.name)+'</b></a><b>'+esc(o.price||"цена по договорённости")+'</b></div><div class="small"><span class="stars">'+stars(m.rating||0)+'</span> '+(m.reviews_count||0)+' отзывов · выполнено '+(m.done_count||0)+'</div><div>'+badges(m)+'</div>'+(o.message?'<div>'+esc(o.message)+'</div>':'')+'<div class="acts"><button class="btn sm" data-choose="'+r.id+'|'+m.id+'">Выбрать мастера</button></div></div>';}).join(""):'<p class="muted">Ждём откликов мастеров. Обычно это занимает до часа.</p>';
-    if(r.status==="assigned") body='<div class="msg">Вы выбрали мастера. Он получил ваш номер и свяжется с вами, чтобы договориться о времени и цене.</div>';
+    if(r.status==="new") body=of.length?'<h3>Отклики мастеров ('+of.length+')</h3>'+of.map(o=>{const m=o.masters||{};return '<div class="item"><div class="top"><a href="#m-'+m.id+'"><b>'+esc(m.name)+'</b></a><b>'+esc(o.price||"цена по договорённости")+'</b></div><div class="small"><span class="stars">'+stars(m.rating||0)+'</span> '+(m.reviews_count||0)+' отзывов · выполнено '+(m.done_count||0)+'</div><div>'+badges(m)+'</div>'+(o.message?'<div>'+esc(o.message)+'</div>':'')+'<div class="acts"><button class="btn sm" data-choose="'+r.id+'|'+m.id+'">Выбрать мастера</button><button class="btn s sm" data-chat="'+r.id+'|'+m.id+'|'+esc(m.name)+'">Написать</button></div></div>';}).join(""):'<p class="muted">Ждём откликов мастеров. Обычно это занимает до часа.</p>';
+    if(r.status==="assigned") body='<div class="msg">Вы выбрали мастера. Он получил ваш номер и свяжется с вами, чтобы договориться о времени и цене.</div><button class="btn s sm" data-chat="'+r.id+'|'+r.master_id+'|Мастер">Чат с мастером</button>';
     if(r.status==="done"&&r.master_id&&!revs.some(v=>v.request_id===r.id)) body='<form class="item" data-rev="'+r.id+'|'+r.master_id+'"><h3>Оцените мастера</h3><label>Оценка<select name="rt">'+[5,4,3,2,1].map(n=>'<option value="'+n+'">'+n+' — '+stars(n)+'</option>').join("")+'</select></label><label>Отзыв<textarea name="tx" placeholder="Как всё прошло?"></textarea></label><button class="btn sm">Оставить отзыв</button></form>';
     if(r.status==="done"&&revs.some(v=>v.request_id===r.id)) body='<p class="muted small">Спасибо за отзыв.</p>';
-    return '<div class="card"><div class="top"><h2>'+esc(r.service)+'</h2><span class="chip '+s[1]+'">'+s[0]+'</span></div><div class="muted small">№'+r.id+' · '+esc(r.city)+' · '+dt(r.created_at)+(r.when_text?' · '+esc(r.when_text):'')+'</div>'+(r.description?'<div>'+esc(r.description)+'</div>':'')+body+((r.status==="new"||r.status==="assigned")?'<div><button class="btn s sm" data-cancel="'+r.id+'">Отменить заявку</button></div>':'')+'</div>';
+    return '<div class="card"><div class="top"><h2>'+esc(r.service)+'</h2><span class="chip '+s[1]+'">'+s[0]+'</span></div><div class="muted small">№'+r.id+' · '+esc(r.city)+' · '+dt(r.created_at)+(r.when_text?' · '+esc(r.when_text):'')+'</div>'+bd(r)+(r.description?'<div>'+esc(r.description)+'</div>':'')+body+((r.status==="new"||r.status==="assigned")?'<div><button class="btn s sm" data-cancel="'+r.id+'">Отменить заявку</button></div>':'')+'</div>';
   }).join("")+'</div>';
   T.querySelectorAll("[data-choose]").forEach(b=>b.onclick=async()=>{const [r,m]=b.dataset.choose.split("|");b.disabled=true;const {error}=await sb.rpc("choose_master",{p_request:+r,p_master:m});if(error)return fail(error);tReq();});
   T.querySelectorAll("[data-cancel]").forEach(b=>b.onclick=async()=>{if(b.dataset.sure!=="1"){b.dataset.sure="1";b.textContent="Точно отменить?";return;}const {error}=await sb.from("requests").update({status:"cancelled"}).eq("id",+b.dataset.cancel);if(error)return fail(error);tReq();});
@@ -184,13 +193,13 @@ function bindMF(){
 }
 async function tFeed(){
   const T=$("#mt");T.innerHTML='<div class="empty">Загрузка…</div>';
-  const {data,error}=await sb.from("open_requests").select("*").order("created_at",{ascending:false}).limit(200);
+  const {data,error}=await sb.from("public_tasks").select("*").eq("status","new").order("created_at",{ascending:false}).limit(200);
   if(error)return fail(error);
   const mine=new Set(((await sb.from("offers").select("request_id").eq("master_id",uid())).data||[]).map(o=>o.request_id));
   const list=data.filter(r=>!onlyMine||(master.cities.includes(r.city)&&(master.services.includes(r.service)||!SERVICES.includes(r.service))));
   T.innerHTML='<label class="small" style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" id="om" style="width:auto"'+(onlyMine?' checked':'')+'> Только мои города и услуги</label>'
-  +(list.length?list.map(r=>'<div class="card"><div class="top"><h2>'+esc(r.service)+'</h2><span class="muted small">'+dt(r.created_at)+'</span></div><div class="muted small">'+esc(r.city)+(r.when_text?' · '+esc(r.when_text):'')+' · откликов: '+r.offers_count+'</div>'+(r.description?'<div>'+esc(r.description)+'</div>':'')
-    +(mine.has(r.id)?'<span class="chip g">Вы откликнулись</span>':'<form class="acts" data-of="'+r.id+'"><input name="pr" placeholder="Цена, например «от 40 р.»" style="flex:1;min-width:160px"><input name="ms" placeholder="Комментарий клиенту" style="flex:2;min-width:200px"><button class="btn sm">Готов выполнить</button></form>')+'</div>').join(""):'<div class="empty">Подходящих заявок сейчас нет.</div>');
+  +(list.length?list.map(r=>'<div class="card"><div class="top"><h2>'+esc(r.service)+'</h2><span class="muted small">'+dt(r.created_at)+'</span></div><div class="muted small">'+esc(r.city)+(r.when_text?' · '+esc(r.when_text):'')+' · откликов: '+r.offers_count+'</div>'+bd(r)+(r.description?'<div>'+esc(r.description)+'</div>':'')
+    +(mine.has(r.id)?'<div class="acts"><span class="chip g">Вы откликнулись</span><button class="btn s sm" data-chat="'+r.id+'|'+uid()+'|Клиент">Чат с клиентом</button></div>':'<form class="acts" data-of="'+r.id+'"><input name="pr" placeholder="Цена, например «от 40 р.»" style="flex:1;min-width:160px"><input name="ms" placeholder="Комментарий клиенту" style="flex:2;min-width:200px"><button class="btn sm">Готов выполнить</button></form>')+'</div>').join(""):'<div class="empty">Подходящих заявок сейчас нет.</div>');
   $("#om").onchange=e=>{onlyMine=e.target.checked;tFeed();};
   T.querySelectorAll("[data-of]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const {error}=await sb.from("offers").insert({request_id:+f.dataset.of,price:f.pr.value.trim()||null,message:f.ms.value.trim()||null});if(error)return fail(error);tFeed();});
 }
@@ -199,11 +208,35 @@ async function tJobs(){
   const {data,error}=await sb.from("requests").select("*").eq("master_id",uid()).order("created_at",{ascending:false});
   if(error)return fail(error);
   T.innerHTML=data.length?data.map(r=>{const s=ST[r.status];return '<div class="card"><div class="top"><h2>'+esc(r.service)+'</h2><span class="chip '+s[1]+'">'+s[0]+'</span></div><div class="muted small">№'+r.id+' · '+esc(r.city)+(r.address?', '+esc(r.address):'')+' · '+dt(r.created_at)+'</div>'+(r.description?'<div>'+esc(r.description)+'</div>':'')
-    +(r.status==="assigned"?'<div class="msg">Клиент: <b>'+esc(r.contact_name||"без имени")+'</b>, <b style="user-select:all">'+esc(r.contact_phone)+'</b>. Позвоните и договоритесь.</div><form class="acts" data-dn="'+r.id+'"><input name="pr" type="number" min="0" step="0.01" placeholder="Итоговая цена, BYN" style="max-width:220px" required><button class="btn sm">Работа выполнена</button></form>':'')
+    +(r.status==="assigned"?'<div class="msg">Клиент: <b>'+esc(r.contact_name||"без имени")+'</b>, <b style="user-select:all">'+esc(r.contact_phone)+'</b>. Позвоните и договоритесь.</div><button class="btn s sm" data-chat="'+r.id+'|'+uid()+'|Клиент">Чат с клиентом</button><form class="acts" data-dn="'+r.id+'"><input name="pr" type="number" min="0" step="0.01" placeholder="Итоговая цена, BYN" style="max-width:220px" required><button class="btn sm">Работа выполнена</button></form>':'')
     +(r.status==="done"?'<div class="small muted">Итоговая цена: '+esc(r.price_final)+' BYN</div>':'')+'</div>';}).join(""):'<div class="empty">Здесь появятся заказы, где клиент выбрал вас.</div>';
   T.querySelectorAll("[data-dn]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const {error}=await sb.rpc("mark_done",{p_request:+f.dataset.dn,p_price:+f.pr.value});if(error)return fail(error);tJobs();});
 }
 
+const bd=r=>(r.budget||r.deadline)?'<div class="small"><b>'+(r.budget?'Бюджет до '+r.budget+' р.':'Бюджет по договорённости')+'</b>'+(r.deadline?' · срок до '+new Date(r.deadline).toLocaleDateString("ru-RU"):'')+'</div>':'';
+let tCity="",tSvc="";
+async function vTasks(){
+  V.innerHTML='<div class="top"><h1>Задания</h1><a class="btn sm" href="index.html#order">Создать задание</a></div><div class="card"><div class="row"><label>Город<select id="tc"><option value="">Все города</option>'+opts(CITIES,tCity)+'</select></label><label>Услуга<select id="ts"><option value="">Все услуги</option>'+opts(SERVICES,tSvc)+'</select></label></div></div><div id="tl" style="display:grid;gap:14px"><div class="empty">Загрузка…</div></div>';
+  $("#tc").onchange=e=>{tCity=e.target.value;vTasks();};$("#ts").onchange=e=>{tSvc=e.target.value;vTasks();};
+  let q=sb.from("public_tasks").select("*").order("created_at",{ascending:false}).limit(100);
+  if(tCity)q=q.eq("city",tCity);if(tSvc)q=q.eq("service",tSvc);
+  const {data,error}=await q;if(error)return fail(error);
+  const can=master&&master.approved&&!master.blocked;
+  $("#tl").innerHTML=data.length?data.map(r=>'<div class="card"><div class="top"><h2>'+esc(r.service)+'</h2><span class="chip '+(r.status==="new"?"w":"g")+'">'+(r.status==="new"?"Открыто":"Выполняется")+'</span></div><div class="muted small">'+esc(r.city)+' · '+dt(r.created_at)+(r.when_text?' · '+esc(r.when_text):'')+' · откликов: '+r.offers_count+'</div>'+bd(r)+(r.description?'<div>'+esc(r.description)+'</div>':'')+(r.status==="new"?(can?'<div><a class="btn sm" href="#me" onclick="meTab=\'mst\';mTab=\'feed\'">Откликнуться</a></div>':'<div class="small muted">Откликаться могут проверенные мастера. <a href="#me" onclick="meTab=\'mst\'">Стать мастером</a></div>'):'')+'</div>').join(""):'<div class="empty">Открытых заданий пока нет.</div>';
+}
+let chatSub=null;
+async function openChat(rid,mid,title){
+  if(!session){location.hash="#me";return;}
+  const ov=document.createElement("div");ov.className="ov";ov.innerHTML='<div class="chat"><div class="top"><h3>Чат по заявке №'+rid+(title?' · '+esc(title):'')+'</h3><button class="btn s sm" id="cx">Закрыть</button></div><div class="msgs" id="cm"><div class="empty">Загрузка…</div></div><form class="acts" id="cf"><input name="b" placeholder="Сообщение" maxlength="2000" required style="flex:1"><button class="btn sm">Отправить</button></form></div>';
+  document.body.appendChild(ov);
+  const close=()=>{ov.remove();if(chatSub){sb.removeChannel(chatSub);chatSub=null;}};
+  $("#cx").onclick=close;ov.onclick=e=>{if(e.target===ov)close();};
+  const box=$("#cm");
+  const draw=list=>{box.innerHTML=list.length?list.map(m=>'<div class="bub'+(m.sender_id===uid()?' me':'')+'">'+esc(m.body)+'<span>'+dt(m.created_at)+'</span></div>').join(""):'<div class="empty">Сообщений пока нет. Напишите первым.</div>';box.scrollTop=box.scrollHeight;};
+  const list=((await sb.from("messages").select("*").eq("request_id",rid).eq("master_id",mid).order("created_at")).data)||[];draw(list);
+  chatSub=sb.channel("chat-"+rid+"-"+mid).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:"request_id=eq."+rid},p=>{const m=p.new;if(m.master_id!==mid||list.some(x=>x.id===m.id))return;list.push(m);draw(list);}).subscribe();
+  $("#cf").onsubmit=async e=>{e.preventDefault();const f=e.target,b=f.b.value.trim();if(!b)return;f.b.value="";const {data,error}=await sb.from("messages").insert({request_id:rid,master_id:mid,body:b}).select().single();if(error){f.b.value=b;return fail(error);}if(!list.some(x=>x.id===data.id)){list.push(data);draw(list);}};
+}
 /* каталог мастеров */
 let fCity="",fSvc="";
 async function vMasters(){
