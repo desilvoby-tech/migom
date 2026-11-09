@@ -67,12 +67,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal)}
 <body>
 <header><div class="nav wrap">
 <a class="logo" href="index.html"><i></i>desilvo</a>
-<a class="l" href="#tasks" data-v="tasks">Задания</a>
-<a class="l" href="#masters" data-v="masters">Мастера</a>
-<a class="l" href="#me" data-v="me">Кабинет</a>
+<a class="l" href="#new" data-v="new">Создать задание</a>
+<a class="l" href="#tasks" data-v="tasks">Найти задания</a>
+<a class="l" href="#masters" data-v="masters">Исполнители</a>
+<a class="l" href="#me" data-v="me">Мои заказы</a>
 <a class="l" href="#admin" data-v="admin" id="navAdmin" hidden>Админка</a>
 <span class="sp"></span>
-<a class="btn sm" href="index.html#order">Оставить заявку</a>
+<a class="btn sm" href="#new">Создать задание</a>
 <button class="btn s sm" id="logout" hidden>Выйти</button>
 </div></header>
 <main class="wrap" id="view"><div class="empty">Загрузка…</div></main>
@@ -104,7 +105,7 @@ async function init(){
   sb.auth.onAuthStateChange(async(ev,s)=>{const changed=(s&&s.user.id)!==uid();session=s;if(changed){await load();route();}});
   await load(); addEventListener("hashchange",route); route();
   $("#logout").onclick=async()=>{await sb.auth.signOut();location.hash="#masters";};
-  document.addEventListener("click",e=>{const b=e.target.closest("[data-chat]");if(b){const [r,m,t]=b.dataset.chat.split("|");openChat(+r,m,t);}});
+  document.addEventListener("click",e=>{if(e.target.closest("#tgl"))return tgLogin();const b=e.target.closest("[data-chat]");if(b){const [r,m,t]=b.dataset.chat.split("|");openChat(+r,m,t);}});
 }
 async function load(){
   profile=master=null;
@@ -120,13 +121,14 @@ function route(){
   if(h.startsWith("m-")) return vMaster(h.slice(2));
   if(h==="masters") return vMasters();
   if(h==="tasks") return vTasks();
+  if(h==="new") return session?vNew():vLogin();
   if(h==="admin") return vAdmin();
   return session?vMe():vLogin();
 }
 
 /* вход */
 function vLogin(){
-  V.innerHTML='<div class="card" style="max-width:460px"><h1>Вход</h1><p class="muted">Введите почту, мы пришлём ссылку для входа. Пароль не нужен. Если вы впервые — аккаунт создастся сам.</p><form id="lf" class="card" style="padding:0;border:0"><label>Email<input id="lemail" type="email" required autocomplete="email" placeholder="you@mail.by"></label><button class="btn">Получить ссылку</button><p id="lmsg" hidden></p></form></div>';
+  V.innerHTML='<div class="card" style="max-width:460px"><h1>Вход</h1><p class="muted">Введите почту, мы пришлём ссылку для входа. Пароль не нужен. Если вы впервые — аккаунт создастся сам.</p><form id="lf" class="card" style="padding:0;border:0"><label>Email<input id="lemail" type="email" required autocomplete="email" placeholder="you@mail.by"></label><button class="btn">Получить ссылку</button><p id="lmsg" hidden></p></form><div class="muted small" style="text-align:center">или</div><button type="button" class="btn" id="tgl" style="background:#2AABEE">Войти через Telegram</button><p id="tgmsg" class="small" hidden></p></div>';
   $("#lf").onsubmit=async e=>{e.preventDefault();const b=$("#lf button");b.disabled=true;const m=$("#lmsg");
     const {error}=await sb.auth.signInWithOtp({email:$("#lemail").value.trim(),options:{emailRedirectTo:location.origin+location.pathname+"#me"}});
     m.hidden=false;m.className=error?"err":"msg";m.textContent=error?("Не удалось отправить: "+error.message):"Ссылка отправлена. Откройте письмо на этом устройстве и нажмите на ссылку. Проверьте папку «Спам».";b.disabled=false;};
@@ -146,13 +148,15 @@ async function vMe(){
 }
 async function tReq(){
   const T=$("#tab");T.innerHTML='<div class="empty">Загрузка…</div>';
-  const {data,error}=await sb.from("requests").select("*").eq("client_id",uid()).order("created_at",{ascending:false});
+  let {data,error}=await sb.from("requests").select("*").eq("client_id",uid()).order("created_at",{ascending:false});
   if(error)return fail(error);
-  if(!data.length){T.innerHTML='<div class="empty">Заявок пока нет. <a href="index.html#order">Оставить заявку</a></div>';return;}
+  const all=data,act=all.filter(r=>r.status==="new"||r.status==="assigned");data=reqTab==="act"?act:all.filter(r=>r.status==="done"||r.status==="cancelled");
+  const head='<div class="top"><div class="tabs"><button data-rt="act" class="'+(reqTab==="act"?"on":"")+'">Активные ('+act.length+')</button><button data-rt="arch" class="'+(reqTab!=="act"?"on":"")+'">Завершённые ('+(all.length-act.length)+')</button></div><a class="btn sm" href="#new">+ Создать задание</a></div>';
+  if(!data.length){T.innerHTML=head+'<div class="empty">'+(reqTab==="act"?'Активных заданий нет. <a href="#new">Создать задание</a>':'Завершённых заданий пока нет.')+'</div>';bindRT();return;}
   const ids=data.map(r=>r.id);
   const offers=(await sb.from("offers").select("id,request_id,price,message,created_at,master_id,masters(id,name,rating,reviews_count,done_count,verified_passport,verified_phone,legal_status)").in("request_id",ids)).data||[];
   const revs=(await sb.from("reviews").select("request_id").in("request_id",ids)).data||[];
-  T.innerHTML='<div class="grid" style="grid-template-columns:1fr">'+data.map(r=>{
+  T.innerHTML=head+'<div class="grid" style="grid-template-columns:1fr">'+data.map(r=>{
     const of=offers.filter(o=>o.request_id===r.id), s=ST[r.status];
     let body='';
     if(r.status==="new") body=of.length?'<h3>Отклики мастеров ('+of.length+')</h3>'+of.map(o=>{const m=o.masters||{};return '<div class="item"><div class="top"><a href="#m-'+m.id+'"><b>'+esc(m.name)+'</b></a><b>'+esc(o.price||"цена по договорённости")+'</b></div><div class="small"><span class="stars">'+stars(m.rating||0)+'</span> '+(m.reviews_count||0)+' отзывов · выполнено '+(m.done_count||0)+'</div><div>'+badges(m)+'</div>'+(o.message?'<div>'+esc(o.message)+'</div>':'')+'<div class="acts"><button class="btn sm" data-choose="'+r.id+'|'+m.id+'">Выбрать мастера</button><button class="btn s sm" data-chat="'+r.id+'|'+m.id+'|'+esc(m.name)+'">Написать</button></div></div>';}).join(""):'<p class="muted">Ждём откликов мастеров. Обычно это занимает до часа.</p>';
@@ -161,7 +165,7 @@ async function tReq(){
     if(r.status==="done"&&revs.some(v=>v.request_id===r.id)) body='<p class="muted small">Спасибо за отзыв.</p>';
     return '<div class="card"><div class="top"><h2>'+esc(r.service)+'</h2><span class="chip '+s[1]+'">'+s[0]+'</span></div><div class="muted small">№'+r.id+' · '+esc(r.city)+' · '+dt(r.created_at)+(r.when_text?' · '+esc(r.when_text):'')+'</div>'+bd(r)+(r.description?'<div>'+esc(r.description)+'</div>':'')+body+((r.status==="new"||r.status==="assigned")?'<div><button class="btn s sm" data-cancel="'+r.id+'">Отменить заявку</button></div>':'')+'</div>';
   }).join("")+'</div>';
-  T.querySelectorAll("[data-choose]").forEach(b=>b.onclick=async()=>{const [r,m]=b.dataset.choose.split("|");b.disabled=true;const {error}=await sb.rpc("choose_master",{p_request:+r,p_master:m});if(error)return fail(error);tReq();});
+  bindRT();T.querySelectorAll("[data-choose]").forEach(b=>b.onclick=async()=>{const [r,m]=b.dataset.choose.split("|");b.disabled=true;const {error}=await sb.rpc("choose_master",{p_request:+r,p_master:m});if(error)return fail(error);tReq();});
   T.querySelectorAll("[data-cancel]").forEach(b=>b.onclick=async()=>{if(b.dataset.sure!=="1"){b.dataset.sure="1";b.textContent="Точно отменить?";return;}const {error}=await sb.from("requests").update({status:"cancelled"}).eq("id",+b.dataset.cancel);if(error)return fail(error);tReq();});
   T.querySelectorAll("[data-rev]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const [r,m]=f.dataset.rev.split("|");const {error}=await sb.from("reviews").insert({request_id:+r,master_id:m,rating:+f.rt.value,text:f.tx.value.trim()||null});if(error)return fail(error);tReq();});
 }
@@ -179,11 +183,11 @@ async function tMaster(){
   const T=$("#tab");
   if(!master){T.innerHTML=masterForm();bindMF();return;}
   let h='<div class="card"><div class="top"><h2>'+esc(master.name)+'</h2>'+(master.blocked?'<span class="chip r">Заблокирован</span>':master.approved?'<span class="chip g">Анкета одобрена</span>':'<span class="chip w">На проверке</span>')+'</div><div class="small"><span class="stars">'+stars(master.rating)+'</span> '+master.reviews_count+' отзывов · выполнено '+master.done_count+'</div><div>'+badges(master)+'</div>'+(master.approved?'<a class="small" href="#m-'+master.id+'">Открыть публичный профиль</a>':'<p class="muted small">Пока анкета на проверке, новые заявки не видны. Мы позвоним по номеру из «Ваших данных».</p>')+'</div>';
-  if(master.approved&&!master.blocked) h+='<div class="tabs"><button data-mt="feed" class="'+(mTab==="feed"?"on":"")+'">Новые заявки</button><button data-mt="jobs" class="'+(mTab==="jobs"?"on":"")+'">Мои заказы</button><button data-mt="form" class="'+(mTab==="form"?"on":"")+'">Анкета</button></div><div id="mt"></div>';
+  if(master.approved&&!master.blocked) h+='<div class="tabs"><button data-mt="feed" class="'+(mTab==="feed"?"on":"")+'">Новые заявки</button><button data-mt="jobs" class="'+(mTab==="jobs"?"on":"")+'">Мои заказы</button><button data-mt="offers" class="'+(mTab==="offers"?"on":"")+'">Мои отклики</button><button data-mt="revs" class="'+(mTab==="revs"?"on":"")+'">Отзывы</button><button data-mt="form" class="'+(mTab==="form"?"on":"")+'">Анкета и фото</button></div><div id="mt"></div>';
   else h+=masterForm(master);
   T.innerHTML=h;
   if(master.approved&&!master.blocked){T.querySelectorAll("[data-mt]").forEach(b=>b.onclick=()=>{mTab=b.dataset.mt;tMaster();});
-    mTab==="feed"?tFeed():mTab==="jobs"?tJobs():($("#mt").innerHTML=masterForm(master),bindMF());}
+    mTab==="feed"?tFeed():mTab==="jobs"?tJobs():mTab==="offers"?tOffers():mTab==="revs"?tRevs():($("#mt").innerHTML=masterForm(master),bindMF());}
   else bindMF();
 }
 let mTab="feed",onlyMine=true;
@@ -199,7 +203,7 @@ function bindMF(){
     else{({error}=await sb.from("masters").insert({id:uid(),...row}));if(!error)await sb.from("profiles").update({role:profile&&profile.role==="admin"?"admin":"master"}).eq("id",uid());}
     if(error)return fail(error);await load();$("#mok")&&($("#mok").textContent="Сохранено");if(!$("#mt"))tMaster();};
 }
-async function tFeed(){
+async function tFeedOld(){
   const T=$("#mt");T.innerHTML='<div class="empty">Загрузка…</div>';
   const {data,error}=await sb.from("public_tasks").select("*").eq("status","new").order("created_at",{ascending:false}).limit(200);
   if(error)return fail(error);
@@ -215,9 +219,10 @@ async function tJobs(){
   const T=$("#mt");T.innerHTML='<div class="empty">Загрузка…</div>';
   const {data,error}=await sb.from("requests").select("*").eq("master_id",uid()).order("created_at",{ascending:false});
   if(error)return fail(error);
-  T.innerHTML=data.length?data.map(r=>{const s=ST[r.status];return '<div class="card"><div class="top"><h2>'+esc(r.service)+'</h2><span class="chip '+s[1]+'">'+s[0]+'</span></div><div class="muted small">№'+r.id+' · '+esc(r.city)+(r.address?', '+esc(r.address):'')+' · '+dt(r.created_at)+'</div>'+(r.description?'<div>'+esc(r.description)+'</div>':'')
+  const done=data.filter(r=>r.status==="done"),earned=done.reduce((a,r)=>a+(+r.price_final||0),0),due=done.filter(r=>!r.commission_paid).reduce((a,r)=>a+(+r.commission||0),0);
+  T.innerHTML='<div class="card"><div class="top"><span>Выполнено: <b>'+done.length+'</b> · в работе: <b>'+data.filter(r=>r.status==="assigned").length+'</b></span><span>Заработано: <b>'+earned.toFixed(2)+' BYN</b>'+(due?' · комиссия к оплате: <b>'+due.toFixed(2)+' BYN</b>':'')+'</span></div></div>'+(data.length?data.map(r=>{const s=ST[r.status];return '<div class="card"><div class="top"><h2>'+esc(r.service)+'</h2><span class="chip '+s[1]+'">'+s[0]+'</span></div><div class="muted small">№'+r.id+' · '+esc(r.city)+(r.address?', '+esc(r.address):'')+' · '+dt(r.created_at)+'</div>'+(r.description?'<div>'+esc(r.description)+'</div>':'')
     +(r.status==="assigned"?'<div class="msg">Клиент: <b>'+esc(r.contact_name||"без имени")+'</b>, <b style="user-select:all">'+esc(r.contact_phone)+'</b>. Позвоните и договоритесь.</div><button class="btn s sm" data-chat="'+r.id+'|'+uid()+'|Клиент">Чат с клиентом</button><form class="acts" data-dn="'+r.id+'"><input name="pr" type="number" min="0" step="0.01" placeholder="Итоговая цена, BYN" style="max-width:220px" required><button class="btn sm">Работа выполнена</button></form>':'')
-    +(r.status==="done"?'<div class="small muted">Итоговая цена: '+esc(r.price_final)+' BYN</div>':'')+'</div>';}).join(""):'<div class="empty">Здесь появятся заказы, где клиент выбрал вас.</div>';
+    +(r.status==="done"?'<div class="small muted">Итоговая цена: '+esc(r.price_final)+' BYN</div>':'')+'</div>';}).join(""):'<div class="empty">Здесь появятся заказы, где клиент выбрал вас.</div>');
   T.querySelectorAll("[data-dn]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const {error}=await sb.rpc("mark_done",{p_request:+f.dataset.dn,p_price:+f.pr.value});if(error)return fail(error);tJobs();});
 }
 
@@ -248,6 +253,66 @@ async function openChat(rid,mid,title){
 function tgBlock(p){return '<div class="item small">'+(p.tg_chat_id?'<div><b>Telegram подключён.</b> Новые задания, отклики и сообщения приходят в бот @desilvo_bot.</div><div><button type="button" class="btn s sm" id="tgoff">Отключить</button></div>':'<div><b>Уведомления в Telegram</b></div><div class="muted">Новые задания, отклики и сообщения — сразу в телефон.</div><div class="acts"><a class="btn sm" target="_blank" rel="noopener" href="https://t.me/desilvo_bot?start='+esc(p.tg_code)+'">Подключить Telegram</a><button type="button" class="btn s sm" onclick="load().then(vMe)">Я подключил</button></div>')+'</div>';}
 function photosBlock(){const ph=master.photos||[];return '<label>Фото работ (до 12)</label><div class="ph">'+ph.map((u,i)=>'<div class="th"><img src="'+esc(u)+'" alt=""><button type="button" data-delph="'+i+'" aria-label="Удалить фото">×</button></div>').join("")+(ph.length<12?'<label class="add">+ Добавить<input type="file" id="phin" accept="image/*" multiple hidden></label>':'')+'</div><span id="phmsg" class="small muted"></span>';}
 async function shrink(file){const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error("Не удалось открыть изображение"));i.src=URL.createObjectURL(file);});const k=Math.min(1,1600/Math.max(img.width,img.height));const c=document.createElement("canvas");c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext("2d").drawImage(img,0,0,c.width,c.height);return await new Promise(r=>c.toBlob(r,"image/jpeg",.85));}
+let reqTab="act";
+function bindRT(){document.querySelectorAll("[data-rt]").forEach(b=>b.onclick=()=>{reqTab=b.dataset.rt;tReq();});}
+let feedTab="rec",fCity2="",fSvc2="",feedLim=20;
+async function tFeed(){
+  const T=$("#mt");T.innerHTML='<div class="empty">Загрузка…</div>';
+  const {data,error}=await sb.from("public_tasks").select("*").eq("status","new").order("created_at",{ascending:false}).limit(300);if(error)return fail(error);
+  const mine=new Set(((await sb.from("offers").select("request_id").eq("master_id",uid())).data||[]).map(o=>o.request_id));
+  let list=data;
+  if(feedTab==="rec")list=list.filter(r=>master.cities.includes(r.city)&&(master.services.includes(r.service)||!SERVICES.includes(r.service)));
+  if(feedTab==="all"){if(fCity2)list=list.filter(r=>r.city===fCity2);if(fSvc2)list=list.filter(r=>r.service===fSvc2);}
+  const shown=list.slice(0,feedLim);
+  T.innerHTML='<div class="tabs"><button data-ft="rec" class="'+(feedTab==="rec"?"on":"")+'">Рекомендованные</button><button data-ft="all" class="'+(feedTab==="all"?"on":"")+'">Все задания</button></div>'
+  +(feedTab==="all"?'<div class="row"><label>Город<select id="f2c"><option value="">Все города</option>'+opts(CITIES,fCity2)+'</select></label><label>Услуга<select id="f2s"><option value="">Все услуги</option>'+opts(SERVICES,fSvc2)+'</select></label></div>':'<p class="small muted">Задания в ваших городах и по вашим услугам. Изменить можно во вкладке «Анкета и фото».</p>')
+  +'<p class="small muted">Найдено: '+list.length+'</p>'
+  +(shown.length?shown.map(r=>'<div class="card"><div class="top"><h2>'+esc(r.service)+'</h2><b>'+(r.budget?'до '+r.budget+' р.':'цена договорная')+'</b></div><div class="muted small">'+esc(r.city)+(r.when_text?' · '+esc(r.when_text):'')+(r.deadline?' · до '+new Date(r.deadline).toLocaleDateString("ru-RU"):'')+' · '+dt(r.created_at)+'</div>'+(r.offers_count?'<div class="small">Откликов: '+r.offers_count+'</div>':'<div><span class="chip w">Без откликов</span></div>')+(r.description?'<div>'+esc(r.description)+'</div>':'')
+    +(mine.has(r.id)?'<div class="acts"><span class="chip g">Вы откликнулись</span><button class="btn s sm" data-chat="'+r.id+'|'+uid()+'|Клиент">Чат с клиентом</button></div>':'<form class="acts" data-of="'+r.id+'"><input name="pr" placeholder="Ваша цена, например «45 р.»" style="flex:1;min-width:160px"><input name="ms" placeholder="Комментарий: сроки, опыт, вопросы" style="flex:2;min-width:200px"><button class="btn sm">Откликнуться</button></form>')+'</div>').join(""):'<div class="empty">Подходящих заданий сейчас нет. Подключите Telegram в «Ваших данных» — пришлём новые сразу.</div>')
+  +(list.length>feedLim?'<div style="text-align:center"><button class="btn s" id="fmore">Показать ещё</button></div>':'');
+  T.querySelectorAll("[data-ft]").forEach(b=>b.onclick=()=>{feedTab=b.dataset.ft;feedLim=20;tFeed();});
+  $("#f2c")&&($("#f2c").onchange=e=>{fCity2=e.target.value;tFeed();});$("#f2s")&&($("#f2s").onchange=e=>{fSvc2=e.target.value;tFeed();});
+  $("#fmore")&&($("#fmore").onclick=()=>{feedLim+=20;tFeed();});
+  T.querySelectorAll("[data-of]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const {error}=await sb.from("offers").insert({request_id:+f.dataset.of,price:f.pr.value.trim()||null,message:f.ms.value.trim()||null});if(error)return fail(error);tFeed();});
+}
+async function tOffers(){
+  const T=$("#mt");T.innerHTML='<div class="empty">Загрузка…</div>';
+  const {data,error}=await sb.from("offers").select("id,request_id,price,message,created_at").eq("master_id",uid()).order("created_at",{ascending:false});if(error)return fail(error);
+  const ids=data.map(o=>o.request_id);
+  const tasks=ids.length?((await sb.from("public_tasks").select("id,service,city,budget,status").in("id",ids)).data||[]):[];
+  const won=new Set(((await sb.from("requests").select("id").eq("master_id",uid())).data||[]).map(r=>r.id));
+  T.innerHTML=data.length?data.map(o=>{const tk=tasks.find(x=>x.id===o.request_id);const st=won.has(o.request_id)?['Вас выбрали','g']:(tk&&tk.status==="new")?['Ждёт решения клиента','w']:['Выбран другой мастер','r'];return '<div class="card"><div class="top"><h3>'+esc(tk?tk.service:'Задание №'+o.request_id)+'</h3><span class="chip '+st[1]+'">'+st[0]+'</span></div><div class="small muted">'+(tk?esc(tk.city)+' · ':'')+'ваша цена: '+esc(o.price||'не указана')+' · '+dt(o.created_at)+'</div>'+(o.message?'<div class="small">'+esc(o.message)+'</div>':'')+'<div class="acts"><button class="btn s sm" data-chat="'+o.request_id+'|'+uid()+'|Клиент">Чат с клиентом</button>'+(st[1]==="w"?'<button class="btn s sm" data-wd="'+o.id+'">Отозвать отклик</button>':'')+'</div></div>';}).join(""):'<div class="empty">Вы ещё не откликались на задания.</div>';
+  T.querySelectorAll("[data-wd]").forEach(b=>b.onclick=async()=>{const {error}=await sb.from("offers").delete().eq("id",+b.dataset.wd);if(error)return fail(error);tOffers();});
+}
+async function tRevs(){
+  const T=$("#mt");T.innerHTML='<div class="empty">Загрузка…</div>';
+  const {data,error}=await sb.from("reviews").select("id,rating,text,master_reply,created_at").eq("master_id",uid()).order("created_at",{ascending:false});if(error)return fail(error);
+  T.innerHTML=data.length?data.map(r=>'<div class="card"><div class="top"><span class="stars">'+stars(r.rating)+'</span><span class="small muted">'+dt(r.created_at)+'</span></div>'+(r.text?'<div>'+esc(r.text)+'</div>':'')+'<form class="acts" data-rp="'+r.id+'"><input name="t" value="'+esc(r.master_reply)+'" placeholder="Ваш ответ на отзыв" style="flex:1"><button class="btn s sm">'+(r.master_reply?'Изменить ответ':'Ответить')+'</button></form></div>').join(""):'<div class="empty">Отзывов пока нет. Они появятся после выполненных заказов.</div>';
+  T.querySelectorAll("[data-rp]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const {error}=await sb.from("reviews").update({master_reply:f.t.value.trim()||null}).eq("id",+f.dataset.rp);if(error)return fail(error);tRevs();});
+}
+async function vNew(){
+  const p=profile||{};
+  V.innerHTML='<h1>Создать задание</h1><form class="card" id="nf"><label>Что нужно сделать<input name="svc" list="nsl" required placeholder="Например, заменить смеситель"><datalist id="nsl">'+SERVICES.map(s=>'<option value="'+esc(s)+'">').join("")+'</datalist></label><label>Подробности<textarea name="ds" placeholder="Объём работ, материалы, особенности. Телефон здесь не пишите."></textarea></label><div class="row"><label>Город<select name="ct">'+opts(CITIES,p.city||"Минск")+'</select></label><label>Район или улица<input name="ad" placeholder="Необязательно"></label></div><div class="row"><label>Бюджет, BYN<input name="bg" type="number" min="0" placeholder="Можно оставить пустым"></label><label>Сделать до<input name="dl" type="date" min="'+new Date().toISOString().slice(0,10)+'"></label></div><label>Когда удобно<select name="wh">'+opts(["Как можно скорее","Сегодня","На этой неделе","Не срочно"],"Как можно скорее")+'</select></label><div class="row"><label>Имя<input name="nm" value="'+esc(p.name)+'"></label><label>Телефон для мастера<input name="ph" type="tel" required value="'+esc(p.phone)+'" placeholder="+375 (__) ___-__-__"></label></div><button class="btn">Опубликовать задание</button><p class="small muted">Телефон увидит только мастер, которого вы выберете.</p></form>';
+  $("#nf").onsubmit=async e=>{e.preventDefault();const f=e.target;const ph=f.ph.value.trim();if(!f.svc.value.trim())return fail({message:"Напишите, что нужно сделать"});if(ph.replace(/\D/g,"").length<9)return fail({message:"Проверьте номер телефона"});const b=f.querySelector("button");b.disabled=true;
+    const {error}=await sb.from("requests").insert({service:f.svc.value.trim(),description:f.ds.value.trim()||null,city:f.ct.value,address:f.ad.value.trim()||null,budget:f.bg.value?Math.round(+f.bg.value):null,deadline:f.dl.value||null,when_text:f.wh.value,contact_name:f.nm.value.trim()||null,contact_phone:ph});
+    if(error){b.disabled=false;return fail(error);}
+    if(!p.phone)await sb.from("profiles").update({phone:ph}).eq("id",uid());
+    meTab="req";reqTab="act";location.hash="#me";};
+}
+async function tgLogin(){
+  const m=$("#tgmsg");m.hidden=false;m.className="small";m.textContent="Готовим вход…";
+  const fn=MIGOM.url+"/functions/v1/tg";let r={};
+  try{r=await (await fetch(fn,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"login_start"})})).json();}catch(e){}
+  if(!r.code){m.className="err";m.textContent="Вход через Telegram пока недоступен. Войдите по почте.";return;}
+  m.innerHTML='<a class="btn sm" target="_blank" rel="noopener" href="'+esc(r.link)+'" style="background:#2AABEE">Открыть Telegram</a> Нажмите «Старт» в боте — вход произойдёт автоматически.';
+  const t0=Date.now();
+  const tick=async()=>{if(Date.now()-t0>5*60e3){m.className="err";m.textContent="Время вышло. Нажмите «Войти через Telegram» ещё раз.";return;}
+    try{const s=await (await fetch(fn,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"login_check",code:r.code})})).json();
+      if(s.token_hash){const {error}=await sb.auth.verifyOtp({token_hash:s.token_hash,type:"magiclink"});if(error){m.className="err";m.textContent="Ошибка входа: "+error.message;return;}location.hash="#me";return;}
+      if(s.status==="expired"||s.status==="error"){m.className="err";m.textContent="Не удалось войти. Попробуйте ещё раз.";return;}}catch(e){}
+    setTimeout(tick,2500);};
+  setTimeout(tick,2500);
+}
 /* каталог мастеров */
 let fCity="",fSvc="";
 async function vMasters(){
