@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Мигом Мастер — подбор проверенных мастеров в Гомеле. Оставьте заявку бесплатно.">
-<title>Мигом Мастер — мастера Гомеля</title>
+<meta name="description" content="Мигом Мастер — подбор проверенных мастеров по всей Беларуси. Оставьте заявку бесплатно.">
+<title>Мигом Мастер — мастера по всей Беларуси</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Manrope:wght@400;500;600;700&display=swap">
 <style>
@@ -30,6 +30,7 @@ h3{font-size:1.05rem;font-weight:700}
 p{margin:0}
 .eyebrow{font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:999px;font:700 1rem var(--body);padding:14px 26px;cursor:pointer;text-decoration:none;transition:transform .15s,box-shadow .15s}
+.btn-ghost{background:transparent;color:var(--on-ink);border:1.5px solid rgba(255,255,255,.28)}
 .btn-spark{background:var(--spark);color:var(--spark-ink)}
 .btn-spark:hover{transform:translateY(-1px);box-shadow:0 6px 18px -6px rgba(255,197,48,.7)}
 .btn:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible,button:focus-visible{outline:3px solid var(--spark);outline-offset:2px}
@@ -154,9 +155,11 @@ footer{background:var(--ink);color:var(--on-ink-muted);border-top:1px solid rgba
 <a href="#trust">Проверка мастеров</a>
 <a href="#faq">Вопросы</a>
 <a href="#pros">Мастерам</a>
+<a href="app.html#masters">Каталог мастеров</a>
 </nav>
 <div class="nav-right">
 <span class="phone">+375 (25) 616-01-36</span>
+<a class="btn btn-ghost" href="app.html#me">Войти</a>
 <a class="btn btn-spark" href="#order">Найти мастера</a>
 </div>
 </div>
@@ -165,8 +168,8 @@ footer{background:var(--ink);color:var(--on-ink-muted);border-top:1px solid rgba
 <div class="hero">
 <div class="wrap hero-grid">
 <div>
-<h1>Мастер в Гомеле — <em>мигом</em></h1>
-<p class="hero-lead">Опишите задачу за пару минут. Мы передадим заявку проверенным мастерам вашего района, вы сравните предложения и выберете сами. Подбор бесплатный.</p>
+<h1>Мастер рядом — <em>мигом</em></h1>
+<p class="hero-lead">Опишите задачу за пару минут. Мы передадим заявку проверенным мастерам вашего города, вы сравните предложения и выберете сами. Подбор бесплатный.</p>
 <form class="search" id="heroSearch" role="search">
 <input id="heroQuery" type="text" placeholder="Что нужно сделать? Например, повесить люстру" aria-label="Какая услуга нужна">
 <button class="btn btn-spark" type="submit">Найти</button>
@@ -181,7 +184,7 @@ footer{background:var(--ink);color:var(--on-ink-muted);border-top:1px solid rgba
 </div>
 <div class="hero-card" aria-label="Пример того, как приходят отклики">
 <div class="ticket">
-<div class="ticket-top"><span>Заявка · Советский район</span><span>сегодня</span></div>
+<div class="ticket-top"><span>Заявка · Гомель</span><span>сегодня</span></div>
 <b>Течёт смеситель на кухне</b>
 <span style="font-size:.9rem;color:var(--muted)">Нужно заменить картридж или весь смеситель, удобно после 18:00</span>
 </div>
@@ -194,7 +197,7 @@ footer{background:var(--ink);color:var(--on-ink-muted);border-top:1px solid rgba
 <section id="services">
 <div class="wrap">
 <div class="sec-head">
-<div><p class="eyebrow">Услуги</p><h2>Кого ищут в Гомеле</h2></div>
+<div><p class="eyebrow">Услуги</p><h2>Кого ищут в Беларуси</h2></div>
 <p>Нажмите на услугу, и она подставится в заявку. Не нашли нужное — просто опишите задачу своими словами.</p>
 </div>
 <div class="cats" id="cats"></div>
@@ -218,7 +221,7 @@ footer{background:var(--ink);color:var(--on-ink-muted);border-top:1px solid rgba
 <p>Чем подробнее описание, тем точнее мастер назовёт цену. Фото можно будет отправить мастеру при созвоне.</p>
 <ul class="perks">
 <li><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17 19 7"/></svg>Подбор бесплатный, без обязательств</li>
-<li><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17 19 7"/></svg>Только мастера из Гомеля и пригорода</li>
+<li><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17 19 7"/></svg>Мастера в Минске, Гомеле, Бресте и других городах</li>
 <li><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17 19 7"/></svg>Номер телефона видят только выбранные мастера</li>
 </ul>
 </div>
@@ -227,9 +230,9 @@ footer{background:var(--ink);color:var(--on-ink-muted);border-top:1px solid rgba
 <div class="field"><label for="o-svc">Услуга</label><input id="o-svc" list="svcList" placeholder="Например, электрик" required><datalist id="svcList"></datalist></div>
 <div class="field"><label for="o-desc">Что нужно сделать</label><textarea id="o-desc" placeholder="Опишите задачу: что сломалось, объём работ, есть ли материалы"></textarea></div>
 <div class="row">
-<div class="field"><label for="o-area">Район</label>
-<select id="o-area"><option>Центральный</option><option>Советский</option><option>Железнодорожный</option><option>Новобелицкий</option><option>Гомельский район</option></select></div>
-<div class="field"><label for="o-addr">Улица (необязательно)</label><input id="o-addr" placeholder="ул. Советская"></div>
+<div class="field"><label for="o-area">Город</label>
+<select id="o-area"><option>Минск</option><option>Брест</option><option>Витебск</option><option>Гомель</option><option>Гродно</option><option>Могилёв</option><option>Барановичи</option><option>Бобруйск</option><option>Борисов</option><option>Пинск</option><option>Орша</option><option>Мозырь</option><option>Солигорск</option><option>Новополоцк</option><option>Лида</option><option>Молодечно</option><option>Полоцк</option><option>Жлобин</option><option>Светлогорск</option><option>Речица</option><option>Слуцк</option><option>Жодино</option><option>Другой город</option></select></div>
+<div class="field"><label for="o-addr">Район или улица (необязательно)</label><input id="o-addr" placeholder="ул. Советская"></div>
 </div>
 <div class="field"><span style="font-weight:700;font-size:.88rem">Когда</span>
 <div class="when">
@@ -279,9 +282,9 @@ footer{background:var(--ink);color:var(--on-ink-muted);border-top:1px solid rgba
 <div class="wrap pros-grid">
 <div>
 <p class="eyebrow" style="color:var(--spark)">Мастерам</p>
-<h2>Ищете клиентов в Гомеле?</h2>
+<h2>Ищете новых клиентов?</h2>
 <ul class="pros-list">
-<li><b>Заявки по вашему району</b><span>Получаете только то, что подходит по услуге и месту.</span></li>
+<li><b>Заявки по вашему городу</b><span>Получаете только то, что подходит по услуге и месту.</span></li>
 <li><b>Свой график</b><span>Берёте заказы, когда удобно. Никаких смен и планов.</span></li>
 <li><b>Комиссия после работы</b><span>Размер известен заранее, платите только с выполненных заказов.</span></li>
 </ul>
@@ -299,7 +302,8 @@ footer{background:var(--ink);color:var(--on-ink-muted);border-top:1px solid rgba
 <div class="field"><label for="p-status">Статус</label><select id="p-status"><option>ИП</option><option>Ремесленник</option><option>Самозанятый</option><option>Пока не оформлен</option></select></div>
 </div>
 <p class="err" id="p-err" hidden></p>
-<button class="btn btn-spark" type="submit" id="p-btn">Стать мастером</button>
+<button class="btn btn-spark" type="submit" id="p-btn">Оставить заявку на подключение</button>
+<p class="fine">Или сразу <a href="app.html#me">зарегистрируйтесь в кабинете мастера</a>.</p>
 </form>
 </div>
 </div>
@@ -310,14 +314,16 @@ footer{background:var(--ink);color:var(--on-ink-muted);border-top:1px solid rgba
 <div class="foot">
 <div>
 <a class="logo" href="#top"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#FFC530"/><path d="M18 5 9 18h6l-2 9 10-14h-6l1-8z" fill="#101A33"/></svg>Мигом Мастер</a>
-<p style="margin-top:12px;max-width:30em">Сервис подбора мастеров и специалистов в Гомеле и Гомельском районе.</p>
+<p style="margin-top:12px;max-width:30em">Сервис подбора мастеров и специалистов по всей Беларуси.</p>
 </div>
 <div><h3>Клиентам</h3><ul><li><a href="#order">Оставить заявку</a></li><li><a href="#how">Как это работает</a></li><li><a href="#trust">Проверка мастеров</a></li><li><a href="#faq">Вопросы</a></li></ul></div>
-<div><h3>Контакты</h3><ul><li style="user-select:all">+375 (25) 616-01-36</li><li style="user-select:all">info@migom.by</li><li>Ежедневно 8:00–21:00</li><li>г. Гомель</li></ul></div>
+<div><h3>Контакты</h3><ul><li style="user-select:all">+375 (25) 616-01-36</li><li style="user-select:all">info@migom.by</li><li>Ежедневно 8:00–21:00</li><li>Вся Беларусь</li></ul></div>
 </div>
-<p class="copy">© 2026 Мигом Мастер — подбор мастеров в Гомеле</p>
+<p class="copy">© 2026 Мигом Мастер — подбор мастеров в Беларуси</p>
 </div>
 </footer>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 const CATS=[
 {t:"Ремонт и отделка",i:'<path d="M3 21h18M6 21V10l6-5 6 5v11"/><path d="M10 21v-5h4v5"/>',s:["Мастер на час","Электрик","Сантехник","Плиточник","Ремонт квартиры","Установка дверей"]},
@@ -339,7 +345,13 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-svc]"); if
 $("#heroSearch").addEventListener("submit",e=>{e.preventDefault(); goOrder($("#heroQuery").value.trim());});
 const phoneOk=v=>v.replace(/\D/g,"").length>=9;
 const FORM_URL="https://formsubmit.co/ajax/desilvo.by@gmail.com";
+const SB=(window.MIGOM&&MIGOM.key&&window.supabase)?supabase.createClient(MIGOM.url,MIGOM.key):null;
 async function save(col,rec){
+let ok=false;
+if(SB&&col==="leads"){const {error}=await SB.from("requests").insert({service:rec.svc,description:rec.desc||null,city:rec.area,address:rec.addr||null,when_text:rec.when,contact_name:rec.name||null,contact_phone:rec.phone});if(error)console.error(error);else ok=true;}
+try{await saveMail(col,rec);}catch(e){if(!ok)throw e;}
+}
+async function saveMail(col,rec){
 const subj=col==="leads"?"Новая заявка: "+rec.svc:"Новая анкета мастера: "+rec.name;
 const r=await fetch(FORM_URL,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
 body:JSON.stringify({_subject:subj,_template:"table",_captcha:"false",...rec})});
@@ -355,7 +367,7 @@ if(!rec.svc) return fail(err,"Укажите, какая услуга нужна
 if(!phoneOk(rec.phone)) return fail(err,"Проверьте номер телефона: в нём должно быть не меньше 9 цифр.");
 const b=$("#o-btn"); b.disabled=true; b.textContent="Отправляем…";
 try{ await save("leads",rec);
-$("#orderBox").innerHTML='<div class="done"><span class="big">Заявка принята</span><p>«'+esc(rec.svc)+'», '+esc(rec.area)+' район. Мастера свяжутся с вами по номеру '+esc(rec.phone)+'.</p><button class="btn btn-spark" type="button" onclick="location.reload()">Новая заявка</button></div>';
+$("#orderBox").innerHTML='<div class="done"><span class="big">Заявка принята</span><p>«'+esc(rec.svc)+'», '+esc(rec.area)+'. Мастера откликнутся, а выбранный мастер позвонит по номеру '+esc(rec.phone)+'.</p><p><a href="app.html#me">Открыть кабинет</a></p><button class="btn btn-spark" type="button" onclick="location.reload()">Новая заявка</button></div>';
 }catch(x){ b.disabled=false; b.textContent="Отправить заявку"; fail(err,"Заявка не отправилась. Позвоните нам: +375 (25) 616-01-36."); }
 });
 $("#proForm").addEventListener("submit",async e=>{
