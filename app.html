@@ -127,7 +127,7 @@ function route(){
 }
 
 /* вход */
-function vLogin(){
+function vLoginOld(){
   V.innerHTML='<div class="card" style="max-width:460px"><h1>Вход</h1><p class="muted">Введите почту, мы пришлём ссылку для входа. Пароль не нужен. Если вы впервые — аккаунт создастся сам.</p><form id="lf" class="card" style="padding:0;border:0"><label>Email<input id="lemail" type="email" required autocomplete="email" placeholder="you@mail.by"></label><button class="btn">Получить ссылку</button><p id="lmsg" hidden></p></form><div class="muted small" style="text-align:center">или</div><button type="button" class="btn" id="tgl" style="background:#2AABEE">Войти через Telegram</button><p id="tgmsg" class="small" hidden></p></div>';
   $("#lf").onsubmit=async e=>{e.preventDefault();const b=$("#lf button");b.disabled=true;const m=$("#lmsg");
     const {error}=await sb.auth.signInWithOtp({email:$("#lemail").value.trim(),options:{emailRedirectTo:location.origin+location.pathname+"#me"}});
@@ -312,6 +312,31 @@ async function tgLogin(){
       if(s.status==="expired"||s.status==="error"){m.className="err";m.textContent="Не удалось войти. Попробуйте ещё раз.";return;}}catch(e){}
     setTimeout(tick,2500);};
   setTimeout(tick,2500);
+}
+function vLogin(){
+  V.innerHTML='<div class="card" style="max-width:460px"><h1>Вход и регистрация</h1><p class="muted small">Введите номер телефона — код для входа придёт в Telegram. Если вы впервые, аккаунт создастся сам.</p>'
+  +'<form id="pf1" style="display:grid;gap:12px"><label>Номер телефона<input id="lph" type="tel" required placeholder="+375 29 123-45-67" autocomplete="tel"></label><button class="btn" style="background:#2AABEE">Получить код в Telegram</button></form>'
+  +'<form id="pf2" style="display:grid;gap:12px" hidden><label>Код из Telegram<input id="lotp" inputmode="numeric" maxlength="6" required placeholder="6 цифр" autocomplete="one-time-code"></label><button class="btn">Войти</button><button type="button" class="btn s sm" id="lback">Изменить номер</button></form>'
+  +'<p id="pmsg" class="small" hidden></p>'
+  +'<details><summary class="small muted" style="cursor:pointer">Войти по почте</summary><form id="lf" style="display:grid;gap:12px;margin-top:12px"><label>Email<input id="lemail" type="email" required autocomplete="email" placeholder="you@mail.by"></label><button class="btn s">Получить ссылку на почту</button><p id="lmsg" hidden></p></form></details></div>';
+  const fn=MIGOM.url+"/functions/v1/tg";let codeId=null;const pm=$("#pmsg");
+  const say=(h,err)=>{pm.hidden=false;pm.className=err?"err":"msg";pm.innerHTML=h;};
+  const call=async b=>{try{return await (await fetch(fn,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})).json();}catch(e){return {status:"neterr"};}};
+  $("#pf1").onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector("button");b.disabled=true;
+    const r=await call({action:"phone_start",phone:$("#lph").value});b.disabled=false;
+    if(r.status==="sent"){codeId=r.code;$("#pf1").hidden=true;$("#pf2").hidden=false;say("Код отправлен в Telegram, в чат с ботом @desilvo_bot.");$("#lotp").focus();}
+    else if(r.status==="need_bot")say('Этот номер ещё не привязан к Telegram. <a href="'+esc(r.link)+'" target="_blank" rel="noopener"><b>Откройте бота @desilvo_bot</b></a>, нажмите «Старт» и «Поделиться номером», затем снова нажмите «Получить код».',true);
+    else if(r.status==="wait")say("Код уже отправлен. Подождите минуту перед повторной отправкой.",true);
+    else if(r.status==="bad_phone")say("Проверьте номер телефона.",true);
+    else say("Не удалось отправить код. Попробуйте позже или войдите по почте.",true);};
+  $("#pf2").onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector("button");b.disabled=true;const r=await call({action:"phone_verify",code:codeId,otp:$("#lotp").value});b.disabled=false;
+    if(r.status==="ok"){const {error}=await sb.auth.verifyOtp({token_hash:r.token_hash,type:"magiclink"});if(error)return say("Ошибка входа: "+esc(error.message),true);location.hash="#me";}
+    else if(r.status==="wrong")say("Неверный код. Проверьте и введите ещё раз.",true);
+    else say("Код устарел. Запросите новый.",true);};
+  $("#lback").onclick=()=>{$("#pf2").hidden=true;$("#pf1").hidden=false;pm.hidden=true;};
+  $("#lf").onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector("button");b.disabled=true;const m=$("#lmsg");
+    const {error}=await sb.auth.signInWithOtp({email:$("#lemail").value.trim(),options:{emailRedirectTo:location.origin+location.pathname}});
+    m.hidden=false;m.className=error?"err":"msg";m.textContent=error?("Не удалось отправить: "+error.message):"Ссылка отправлена. Откройте письмо на этом устройстве и нажмите на ссылку. Проверьте папку «Спам».";b.disabled=false;};
 }
 /* каталог мастеров */
 let fCity="",fSvc="";
