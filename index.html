@@ -124,7 +124,7 @@ footer{border-top:1px solid var(--line);padding-block:36px;color:var(--muted);fo
 <header><div class="wrap nav">
 <a class="logo" href="#top"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="10" fill="#4BAE2F"/><path d="M18 5 9 18h6l-2 9 10-14h-6l1-8z" fill="#fff"/></svg>desilvo</a>
 <nav class="links" aria-label="Разделы"><a href="app.html#tasks">Задания</a><a href="app.html#masters">Мастера</a><a href="#how">Как это работает</a><a href="#faq">Вопросы</a></nav>
-<div class="sp"><span class="phone">+375 (25) 616-01-36</span><a class="btn ghost" href="app.html#me">Войти</a><a class="btn" href="#order">Создать задание</a></div>
+<div class="sp"><span class="phone">+375 (25) 616-01-36</span><a class="btn ghost" href="app.html#me">Войти</a><a class="btn" href="app.html#new">Создать задание</a></div>
 </div></header>
 <main id="top">
 <div class="hero"><div class="wrap">
@@ -224,7 +224,7 @@ $("#cats").innerHTML=CATS.map(c=>'<details class="cat"><summary><svg viewBox="0 
 $("#svcList").innerHTML=CATS.flatMap(c=>c.s).map(s=>'<option value="'+esc(s)+'">').join("");
 $("#o-area").innerHTML=CITIES.map(c=>'<option>'+c+'</option>').join("");
 $("#o-deadline").min=new Date().toISOString().slice(0,10);
-function goOrder(svc){ if(svc) $("#o-svc").value=svc; $("#order").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"}); setTimeout(()=>$(svc?"#o-desc":"#o-svc").focus({preventScroll:true}),400); }
+function goOrder(svc){ location.href="app.html#new"+(svc?"-"+encodeURIComponent(svc):""); return;  if(svc) $("#o-svc").value=svc; $("#order").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"}); setTimeout(()=>$(svc?"#o-desc":"#o-svc").focus({preventScroll:true}),400); }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-svc]"); if(b) goOrder(b.dataset.svc);});
 $("#heroSearch").addEventListener("submit",e=>{e.preventDefault(); goOrder($("#heroQuery").value.trim());});
 const phoneOk=v=>v.replace(/\D/g,"").length>=9;
