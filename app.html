@@ -86,7 +86,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal)}
 <script>
 const CITIES=["Минск","Брест","Витебск","Гомель","Гродно","Могилёв","Барановичи","Бобруйск","Борисов","Пинск","Орша","Мозырь","Солигорск","Новополоцк","Лида","Молодечно","Полоцк","Жлобин","Светлогорск","Речица","Слуцк","Жодино","Другой город"];
 let SERVICES=["Мастер на час","Электрик","Сантехник","Плиточник","Ремонт квартиры","Установка дверей","Ремонт телефона","Ремонт ноутбука","Ремонт телевизора","Ремонт холодильника","Ремонт стиральной машины","Сборка мебели","Перетяжка мебели","Мебель на заказ","Генеральная уборка","Мойка окон","Химчистка мебели","Маникюр","Парикмахер","Массаж","Визажист","Наращивание ресниц","Репетитор по математике","Репетитор по английскому","Подготовка к ЦЭ","Автоэлектрик","Шиномонтаж","Ремонт авто","Фотограф","Видеограф","Ведущий","Аниматор","Няня","Сиделка","Грузчики","Переезд","Психолог","Другое"];
-const MCOLS="id,name,services,cities,about,experience,legal_status,price_from,photo_url,verified_passport,verified_phone,approved,blocked,rating,reviews_count,done_count,created_at,photos";
+const MCOLS="id,name,services,cities,about,experience,legal_status,price_from,photo_url,verified_passport,verified_phone,approved,blocked,rating,reviews_count,done_count,created_at,photos,tax_status,verified_tax,districts,work_address,hobby,video_url,work_start,education,work_history,achievements,prices,works";
 const ST={new:["Ищем мастера","w"],assigned:["Мастер выбран","g"],done:["Выполнена",""],cancelled:["Отменена","r"]};
 const $=s=>document.querySelector(s), V=$("#view");
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -95,7 +95,7 @@ const stars=n=>"★★★★★".slice(0,Math.round(n))+"☆☆☆☆☆".slice(
 const opts=(a,sel)=>a.map(x=>'<option'+(x===sel?' selected':'')+'>'+esc(x)+'</option>').join("");
 const checks=(name,a,sel)=>'<div class="checks">'+a.map(x=>'<label><input type="checkbox" name="'+name+'" value="'+esc(x)+'"'+((sel||[]).includes(x)?' checked':'')+'>'+esc(x)+'</label>').join("")+'</div>';
 const got=name=>[...document.querySelectorAll('input[name="'+name+'"]:checked')].map(i=>i.value);
-const badges=m=>(m.verified_passport?'<span class="chip">Паспорт проверен</span> ':'')+(m.verified_phone?'<span class="chip">Телефон подтверждён</span> ':'')+(m.legal_status?'<span class="chip w">'+esc(m.legal_status)+'</span>':'');
+const badges=m=>(m.verified_passport?'<span class="chip">Паспорт проверен</span> ':'')+(m.verified_phone?'<span class="chip">Телефон подтверждён</span> ':'')+(m.legal_status?'<span class="chip '+(m.verified_tax?'':'w')+'">'+esc(m.legal_status)+(m.verified_tax?' ✓':'')+'</span>':'');
 function fail(e){alert0((e&&e.message)||String(e));}
 function alert0(t){const d=document.createElement("div");d.className="msg err";d.textContent="Ошибка: "+t;V.prepend(d);scrollTo(0,0);}
 
@@ -125,6 +125,7 @@ function route(){
   if(h.startsWith("m-")) return vMaster(h.slice(2));
   if(h==="masters") return vMasters();
   if(h==="tasks") return vTasks();
+  if(h==="reg"){if(!session){try{sessionStorage.setItem("role","m")}catch(e){}return vLogin();}return vReg();}
   if(h==="new"||h.startsWith("new-")) return vNew(h.startsWith("new-")?decodeURIComponent(h.slice(4)):"");
   if(h==="admin") return vAdmin();
   return session?vMe():vLogin();
@@ -141,6 +142,7 @@ function vLoginOld(){
 /* кабинет */
 let meTab="req";
 async function vMe(){
+  if(!master){let r="";try{r=sessionStorage.getItem("role")||""}catch(e){}if(r==="m"){try{sessionStorage.removeItem("role")}catch(e){}location.hash="#reg";return;}}
   const p=profile||{};
   V.innerHTML='<div class="top"><h1>Кабинет</h1><span class="muted small">'+esc(session.user.email||"")+'</span></div>'
   +'<form class="card" id="pf"><h2>Ваши данные</h2><div class="row"><label>Имя<input id="pname" value="'+esc(p.name)+'"></label><label>Телефон<input id="pphone" type="tel" value="'+esc(p.phone)+'" placeholder="+375 (__) ___-__-__"></label></div><label>Город<select id="pcity"><option value="">—</option>'+opts(CITIES,p.city)+'</select></label>'+tgBlock(p)+'<div class="acts"><button class="btn sm">Сохранить</button><span id="pok" class="small muted"></span></div></form>'
@@ -185,14 +187,14 @@ function masterForm(m){
 }
 async function tMaster(){
   const T=$("#tab");
-  if(!master){T.innerHTML=masterForm();bindMF();return;}
+  if(!master){T.innerHTML='<div class="card"><h2>Станьте исполнителем</h2><p class="muted">Заполните анкету за 5 шагов: данные, налоговый статус, услуги, где работаете, фото. После проверки вы начнёте получать заявки.</p><div><a class="btn" href="#reg">Начать регистрацию</a></div></div>';return;}
   let h='<div class="card"><div class="top"><h2>'+esc(master.name)+'</h2>'+(master.blocked?'<span class="chip r">Заблокирован</span>':master.approved?'<span class="chip g">Анкета одобрена</span>':'<span class="chip w">На проверке</span>')+'</div><div class="small"><span class="stars">'+stars(master.rating)+'</span> '+master.reviews_count+' отзывов · выполнено '+master.done_count+'</div><div>'+badges(master)+'</div>'+(master.approved?'<a class="small" href="#m-'+master.id+'">Открыть публичный профиль</a>':'<p class="muted small">Пока анкета на проверке, новые заявки не видны. Мы позвоним по номеру из «Ваших данных».</p>')+'</div>';
   if(master.approved&&!master.blocked) h+='<div class="tabs"><button data-mt="feed" class="'+(mTab==="feed"?"on":"")+'">Новые заявки</button><button data-mt="jobs" class="'+(mTab==="jobs"?"on":"")+'">Мои заказы</button><button data-mt="offers" class="'+(mTab==="offers"?"on":"")+'">Мои отклики</button><button data-mt="revs" class="'+(mTab==="revs"?"on":"")+'">Отзывы</button><button data-mt="form" class="'+(mTab==="form"?"on":"")+'">Анкета и фото</button></div><div id="mt"></div>';
-  else h+=masterForm(master);
+  else h+='<div id="mt"></div>';
   T.innerHTML=h;
   if(master.approved&&!master.blocked){T.querySelectorAll("[data-mt]").forEach(b=>b.onclick=()=>{mTab=b.dataset.mt;tMaster();});
-    mTab==="feed"?tFeed():mTab==="jobs"?tJobs():mTab==="offers"?tOffers():mTab==="revs"?tRevs():($("#mt").innerHTML=masterForm(master),bindMF());}
-  else bindMF();
+    mTab==="feed"?tFeed():mTab==="jobs"?tJobs():mTab==="offers"?tOffers():mTab==="revs"?tRevs():profileEditor();}
+  else profileEditor();
 }
 let mTab="feed",onlyMine=true;
 function bindMF(){
@@ -318,12 +320,15 @@ async function tgLogin(){
   setTimeout(tick,2500);
 }
 function vLogin(){
-  V.innerHTML='<div class="card" style="max-width:460px"><h1>Вход и регистрация</h1><p class="muted small">Введите номер телефона — код для входа придёт в Telegram. Если вы впервые, аккаунт создастся сам.</p>'
+  V.innerHTML='<div class="card" style="max-width:460px"><h1>Вход и регистрация</h1><div class="tabs"><button type="button" data-role="c">Я клиент</button><button type="button" data-role="m">Я исполнитель</button></div><p class="muted small">Введите номер телефона — код для входа придёт в Telegram. Если вы впервые, аккаунт создастся сам.</p>'
   +'<form id="pf1" style="display:grid;gap:12px"><label>Номер телефона<input id="lph" type="tel" required placeholder="+375 29 123-45-67" autocomplete="tel"></label><button class="btn" style="background:#2AABEE">Получить код в Telegram</button></form>'
   +'<form id="pf2" style="display:grid;gap:12px" hidden><label>Код из Telegram<input id="lotp" inputmode="numeric" maxlength="6" required placeholder="6 цифр" autocomplete="one-time-code"></label><button class="btn">Войти</button><button type="button" class="btn s sm" id="lback">Изменить номер</button></form>'
   +'<p id="pmsg" class="small" hidden></p>'
   +'<details><summary class="small muted" style="cursor:pointer">Войти по почте</summary><form id="lf" style="display:grid;gap:12px;margin-top:12px"><label>Email<input id="lemail" type="email" required autocomplete="email" placeholder="you@mail.by"></label><button class="btn s">Получить ссылку на почту</button><p id="lmsg" hidden></p></form></details></div>';
   const fn=MIGOM.url+"/functions/v1/tg";let codeId=null;const pm=$("#pmsg");
+  const getRole=()=>{try{return sessionStorage.getItem("role")||"c"}catch(e){return "c"}};
+  const markRole=()=>document.querySelectorAll("[data-role]").forEach(b=>b.classList.toggle("on",b.dataset.role===getRole()));
+  document.querySelectorAll("[data-role]").forEach(b=>b.onclick=()=>{try{sessionStorage.setItem("role",b.dataset.role)}catch(e){}markRole();});markRole();
   const say=(h,err)=>{pm.hidden=false;pm.className=err?"err":"msg";pm.innerHTML=h;};
   const call=async b=>{try{return await (await fetch(fn,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})).json();}catch(e){return {status:"neterr"};}};
   $("#pf1").onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector("button");b.disabled=true;
@@ -397,6 +402,92 @@ function drawNew(){
     else V.innerHTML='<div class="card"><h1>Задание опубликовано</h1><p>Мастера откликнутся со своими ценами. Выбранный мастер позвонит по номеру '+esc(ph)+'.</p><p>Чтобы видеть отклики и переписываться с мастерами, войдите по этому номеру телефона.</p><div class="acts"><a class="btn" href="#me">Войти</a><a class="btn s" href="#tasks">Смотреть задания</a></div></div>';
   };
 }
+const TAX={none:"Без налогового статуса",self:"Самозанятый",ip:"Индивидуальный предприниматель",legal:"Юридическое лицо"};
+const TAXS={none:"Не указан",self:"Самозанятый",ip:"ИП",legal:"Юр. лицо"};
+let RG=null;
+function vReg(){
+  if(master){location.hash="#me";return;}
+  const p=profile||{};
+  RG=RG||{step:1,fio:p.full_name||"",phone:p.phone||"",tax:"none",unp:"",services:[],cities:p.city?[p.city]:[],districts:"",addr:"",photo:null,cat:WCATS[0].t};
+  drawReg();
+}
+function drawReg(){
+  const steps=["Данные","Налоговый статус","Услуги","Где работаете","Фото"];
+  let h='<h1>Регистрация исполнителя</h1><div class="tabs">'+steps.map((s,i)=>'<button type="button" class="'+(RG.step===i+1?"on":"")+'" data-rs="'+(i+1)+'">'+(i+1)+'. '+s+'</button>').join("")+'</div><div class="card">';
+  if(RG.step===1)h+='<h2>Персональные данные</h2><label>Фамилия, имя, отчество<input id="rfio" value="'+esc(RG.fio)+'" placeholder="Кириллицей, как в паспорте"></label><label>Телефон<input id="rph" type="tel" value="'+esc(RG.phone)+'" placeholder="+375 (__) ___-__-__"></label><p class="small muted">Клиенты увидят имя и первую букву фамилии. Телефон получит только клиент, который выберет вас.</p>';
+  if(RG.step===2)h+='<h2>Налоговый статус</h2><p class="small muted">Подтверждение статуса защищает клиентов и сервис от мошенников. УНП клиентам не показывается.</p><div class="grid" style="grid-template-columns:1fr">'+Object.keys(TAX).map(k=>'<label class="item" style="cursor:pointer;display:flex;gap:10px;align-items:flex-start;font-weight:600"><input type="radio" name="rtax" value="'+k+'" style="width:auto;margin-top:4px"'+(RG.tax===k?' checked':'')+'><span>'+TAX[k]+'<br><span class="small muted" style="font-weight:500">'+(k==="none"?'В анкете будет написано: «Специалист не предъявил номер налогоплательщика».':'В анкете будет отметка «'+TAX[k]+'».')+'</span></span></label>').join("")+'</div>'+(RG.tax!=="none"?'<label>УНП (9 цифр)<input id="runp" inputmode="numeric" maxlength="9" value="'+esc(RG.unp)+'"></label>':'');
+  if(RG.step===3){const c=WCATS.find(x=>x.t===RG.cat);h+='<h2>Чем вы занимаетесь?</h2><p class="small muted">Выберите услуги — будем предлагать подходящие заявки. Лучше выбрать одну сферу: так анкета выглядит профессиональнее.</p><div class="tags">'+WCATS.map(x=>'<button type="button" class="tag'+(x.t===RG.cat?' on':'')+'" data-rc="'+esc(x.t)+'">'+esc(x.t)+'</button>').join("")+'</div><div class="tags">'+c.s.map(s=>'<button type="button" class="tag'+(RG.services.includes(s)?' on':'')+'" data-rv="'+esc(s)+'">'+(RG.services.includes(s)?'✓ ':'+ ')+esc(s)+'</button>').join("")+'</div><label>Другая услуга<div class="acts"><input id="rother" placeholder="Например, ремонт кофемашин" style="flex:1"><button type="button" class="btn s sm" id="raddsvc">Добавить</button></div></label>'+(RG.services.length?'<div class="small"><b>Выбрано:</b> '+RG.services.map(esc).join(", ")+'</div>':'');}
+  if(RG.step===4)h+='<h2>Где оказываете услуги?</h2><label>Города, куда выезжаете к клиенту</label>'+checks("rcty",CITIES,RG.cities)+'<label>Районы выезда<input id="rdist" value="'+esc(RG.districts)+'" placeholder="Через запятую, например: Советский, Новобелицкий"></label><label>Работаю по адресу<input id="raddr" value="'+esc(RG.addr)+'" placeholder="Город и улица мастерской или салона. Если работаете онлайн — откуда вы"></label>';
+  if(RG.step===5)h+='<h2>Ваше фото</h2><p class="small muted">Профили с фото выбирают намного чаще. Рекомендации: улыбка, нейтральный фон, хорошее освещение, без логотипов, контактов и других людей. Только ваше настоящее фото.</p><div class="acts">'+(RG.photo?'<img src="'+esc(RG.photo)+'" alt="" style="width:120px;height:120px;object-fit:cover;border-radius:50%">':'<div class="add" style="width:120px">нет фото</div>')+'<label class="btn s sm" style="display:inline-flex">'+(RG.photo?'Заменить фото':'Загрузить фото')+'<input type="file" id="rphoto" accept="image/*" hidden></label></div><label style="display:flex;gap:8px;align-items:flex-start;font-weight:500"><input type="checkbox" id="ragree" style="width:auto;margin-top:4px"> Принимаю условия работы с сервисом и согласен на обработку персональных данных</label>';
+  h+='<div class="acts" style="justify-content:space-between">'+(RG.step>1?'<button type="button" class="btn s" id="rprev">Назад</button>':'<span></span>')+(RG.step<5?'<button type="button" class="btn" id="rnext">Продолжить</button>':'<button type="button" class="btn" id="rdone">Отправить анкету на проверку</button>')+'</div></div>';
+  V.innerHTML=h;
+  const keep=()=>{const g=id=>$("#"+id);if(g("rfio"))RG.fio=g("rfio").value.trim();if(g("rph"))RG.phone=g("rph").value.trim();const tx=document.querySelector('input[name="rtax"]:checked');if(tx)RG.tax=tx.value;if(g("runp"))RG.unp=g("runp").value.replace(/\D/g,"");if(RG.step===4){RG.cities=got("rcty");RG.districts=g("rdist").value;RG.addr=g("raddr").value.trim();}};
+  const check=()=>{if(RG.step===1&&(RG.fio.split(/\s+/).length<2||!/^[А-Яа-яЁёІіЎў\s-]+$/.test(RG.fio)))return "Напишите фамилию и имя кириллицей";if(RG.step===1&&RG.phone.replace(/\D/g,"").length<9)return "Проверьте номер телефона";if(RG.step===2&&RG.tax!=="none"&&RG.unp.length!==9)return "УНП должен состоять из 9 цифр";if(RG.step===3&&!RG.services.length)return "Выберите хотя бы одну услугу";if(RG.step===4&&!RG.cities.length)return "Выберите хотя бы один город";return "";};
+  V.querySelectorAll("[data-rs]").forEach(b=>b.onclick=()=>{keep();const to=+b.dataset.rs;if(to>RG.step){const e=check();if(e)return fail({message:e});}RG.step=Math.min(to,RG.step+1);drawReg();});
+  V.querySelectorAll('input[name="rtax"]').forEach(i=>i.onchange=()=>{keep();drawReg();});
+  V.querySelectorAll("[data-rc]").forEach(b=>b.onclick=()=>{RG.cat=b.dataset.rc;drawReg();});
+  V.querySelectorAll("[data-rv]").forEach(b=>b.onclick=()=>{const s=b.dataset.rv;RG.services=RG.services.includes(s)?RG.services.filter(x=>x!==s):[...RG.services,s];drawReg();});
+  $("#raddsvc")&&($("#raddsvc").onclick=()=>{const v=$("#rother").value.trim();if(v&&!RG.services.includes(v))RG.services.push(v);drawReg();});
+  $("#rphoto")&&($("#rphoto").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const blob=await shrink(f);const path=uid()+"/avatar-"+Date.now()+".jpg";const {error}=await sb.storage.from("works").upload(path,blob,{contentType:"image/jpeg"});if(error)throw error;RG.photo=sb.storage.from("works").getPublicUrl(path).data.publicUrl;drawReg();}catch(x){fail(x);}});
+  $("#rprev")&&($("#rprev").onclick=()=>{keep();RG.step--;drawReg();});
+  $("#rnext")&&($("#rnext").onclick=()=>{keep();const e=check();if(e)return fail({message:e});RG.step++;drawReg();});
+  $("#rdone")&&($("#rdone").onclick=async()=>{if(!RG.photo)return fail({message:"Загрузите фото профиля"});if(!$("#ragree").checked)return fail({message:"Подтвердите согласие с условиями"});const b=$("#rdone");b.disabled=true;
+    const parts=RG.fio.split(/\s+/);const pub=parts[1]?(parts[1]+" "+parts[0][0]+"."):parts[0];
+    let {error}=await sb.from("masters").insert({id:uid(),name:pub,services:RG.services,cities:RG.cities,districts:RG.districts.split(",").map(s=>s.trim()).filter(Boolean),work_address:RG.addr||null,tax_status:RG.tax,legal_status:TAXS[RG.tax],photo_url:RG.photo});
+    if(!error)({error}=await sb.from("profiles").update({full_name:RG.fio,name:pub,phone:RG.phone,unp:RG.tax==="none"?null:RG.unp,role:profile&&profile.role==="admin"?"admin":"master"}).eq("id",uid()));
+    if(error){b.disabled=false;return fail(error);}
+    RG=null;await load();meTab="mst";mTab="form";V.innerHTML='<div class="card"><h1>Анкета отправлена на проверку</h1><p>Пока менеджер проверяет данные, заполните анкету подробнее: о себе, цены, опыт и фото работ — так клиенты будут выбирать вас чаще.</p>'+tgBlock(profile||{})+'<div class="acts"><a class="btn" href="#me">Заполнить анкету</a></div></div>';});
+}
+function allWorks(){return [...(master.works||[]),...(master.photos||[]).filter(u=>!(master.works||[]).some(w=>w.u===u)).map(u=>({u,s:"",c:""}))];}
+function worksBlock(){const W2=allWorks();return '<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">'+W2.map((w,i)=>'<div class="item"><img src="'+esc(w.u)+'" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px"><select data-ws2="'+i+'"><option value="">Услуга</option>'+opts(master.services,w.s)+'</select><input data-wc2="'+i+'" value="'+esc(w.c)+'" placeholder="Подпись: что сделали"><button type="button" class="btn s sm" data-wdel="'+i+'">Удалить</button></div>').join("")+'</div><div class="acts">'+(W2.length<30?'<label class="btn s sm" style="display:inline-flex">+ Добавить фото<input type="file" id="pworks" accept="image/*" multiple hidden></label>':'')+(W2.length?'<button type="button" class="btn sm" data-save="works">Сохранить подписи</button>':'')+'<span id="phmsg" class="small muted"></span></div>';}
+function profileEditor(){
+  const M=master;const T=$("#mt");if(!T)return;
+  const items=[["Фото профиля",!!M.photo_url],["О себе (от 100 символов)",(M.about||"").length>=100],["Услуги и цены",(M.prices||[]).length>0],["Где работаете",(M.cities||[]).length>0],["Налоговый статус",M.tax_status!=="none"],["Опыт работы",!!M.work_start],["Фото работ",allWorks().length>0]];
+  const done=items.filter(x=>x[1]).length;
+  const pr=s=>(M.prices||[]).find(x=>x.s===s)||{};
+  const list=(arr,kind)=>(arr||[]).map((x,i)=>'<div class="item small"><div class="top"><b>'+esc(x.a)+'</b><button type="button" class="btn s sm" data-del="'+kind+'|'+i+'">Удалить</button></div><div>'+esc(x.b||"")+'</div>'+(x.c?'<div class="muted">'+esc(x.c)+'</div>':'')+'</div>').join("");
+  T.innerHTML='<div class="card"><div class="top"><h2>Анкета заполнена: '+done+' из '+items.length+'</h2><div class="acts"><a class="btn s sm" href="#m-'+M.id+'" target="_blank">Как видит клиент</a><button type="button" class="btn s sm" id="pcopy">Скопировать ссылку</button></div></div><div class="tags">'+items.map(x=>'<span class="chip '+(x[1]?'g':'w')+'">'+(x[1]?'✓ ':'')+x[0]+'</span>').join("")+'</div></div>'
+  +'<div class="card"><h2>Фото профиля</h2><div class="acts">'+(M.photo_url?'<img src="'+esc(M.photo_url)+'" alt="" style="width:96px;height:96px;object-fit:cover;border-radius:50%">':'')+'<label class="btn s sm" style="display:inline-flex">'+(M.photo_url?'Заменить':'Загрузить')+'<input type="file" id="pavatar" accept="image/*" hidden></label></div></div>'
+  +'<div class="card"><h2>О себе</h2><label>Описание — опыт, сильные стороны, подход к работе. Без телефонов и ссылок.<textarea id="pab" style="min-height:140px">'+esc(M.about)+'</textarea></label><label>Хобби и интересы<input id="phob" value="'+esc(M.hobby)+'"></label><label>Видеоприветствие (ссылка YouTube)<input id="pvid" value="'+esc(M.video_url)+'" placeholder="https://youtube.com/..."></label><label>Работаю по специальности с<input id="pws" type="month" value="'+esc((M.work_start||"").slice(0,7))+'"></label><div><button type="button" class="btn sm" data-save="about">Сохранить</button></div></div>'
+  +'<div class="card"><h2>Услуги и стоимость</h2><p class="small muted">Укажите цену «от» или диапазон. Пусто — «по договорённости».</p>'+M.services.map((s,i)=>'<div class="row" style="grid-template-columns:2fr 1fr 1fr 1fr;align-items:end"><div><b>'+esc(s)+'</b></div><label>От, BYN<input data-pf="'+i+'" type="number" min="0" value="'+esc(pr(s).f)+'"></label><label>До, BYN<input data-pt="'+i+'" type="number" min="0" value="'+esc(pr(s).t)+'"></label><label>За<select data-pu="'+i+'">'+opts(["услугу","час","м²","выезд","занятие"],pr(s).u||"услугу")+'</select></label></div>').join("")+'<label>Добавить или убрать услуги</label>'+checks("psvc",[...new Set([...M.services,...SERVICES])],M.services)+'<div><button type="button" class="btn sm" data-save="prices">Сохранить</button></div></div>'
+  +'<div class="card"><h2>Где работаете</h2><label>Города выезда</label>'+checks("pcty",CITIES,M.cities)+'<label>Районы выезда<input id="pdist" value="'+esc((M.districts||[]).join(", "))+'"></label><label>Работаю по адресу<input id="paddr" value="'+esc(M.work_address)+'"></label><div><button type="button" class="btn sm" data-save="where">Сохранить</button></div></div>'
+  +'<div class="card"><h2>Налоговый статус</h2><div class="row"><label>Статус<select id="ptax">'+Object.keys(TAX).map(k=>'<option value="'+k+'"'+(M.tax_status===k?' selected':'')+'>'+TAX[k]+'</option>').join("")+'</select></label><label>УНП (не виден клиентам)<input id="punp" inputmode="numeric" maxlength="9" value="'+esc((profile||{}).unp)+'"></label></div><p class="small muted">'+(M.verified_tax?'✓ Подтверждено сервисом':'После изменения менеджер проверит УНП.')+'</p><div><button type="button" class="btn sm" data-save="tax">Сохранить</button></div></div>'
+  +'<div class="card"><h2>Опыт работы</h2>'+list(M.work_history,"work_history")+'<div class="row"><label>Организация<input id="nw1"></label><label>Должность<input id="nw2"></label></div><label>Годы и обязанности<input id="nw3" placeholder="2018–2024, ремонт телефонов и ноутбуков"></label><div><button type="button" class="btn s sm" data-add="work_history">+ Добавить место работы</button></div></div>'
+  +'<div class="card"><h2>Образование и курсы</h2>'+list(M.education,"education")+'<div class="row"><label>Тип<select id="ne1">'+opts(["Высшее","Среднее специальное","Курсы","Тренинг","Другое"],"Курсы")+'</select></label><label>Учреждение<input id="ne2"></label></div><label>Специальность и год окончания<input id="ne3"></label><div><button type="button" class="btn s sm" data-add="education">+ Добавить</button></div></div>'
+  +'<div class="card"><h2>Достижения</h2>'+list(M.achievements,"achievements")+'<div class="row"><label>Тип<select id="na1">'+opts(["Конкурс","Сертификат","Грамота","Публикация","Выступление","Блог","Другое"],"Сертификат")+'</select></label><label>Описание<input id="na2"></label></div><div><button type="button" class="btn s sm" data-add="achievements">+ Добавить</button></div></div>'
+  +'<div class="card"><h2>Фото работ</h2><p class="small muted">Ваши работы или процесс, без контактов и логотипов. Укажите услугу и подпись: что сделали, сколько заняло, какие материалы.</p>'+worksBlock()+'</div>';
+  const up=async row=>{const {error}=await sb.from("masters").update(row).eq("id",uid());if(error)return fail(error);await load();profileEditor();};
+  $("#pcopy").onclick=()=>{const u=location.origin+location.pathname+"#m-"+M.id;const b=$("#pcopy");(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>{b.textContent="Ссылка скопирована";},()=>{b.textContent=u;});};
+  $("#pavatar").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const blob=await shrink(f);const path=uid()+"/avatar-"+Date.now()+".jpg";const {error}=await sb.storage.from("works").upload(path,blob,{contentType:"image/jpeg"});if(error)throw error;await up({photo_url:sb.storage.from("works").getPublicUrl(path).data.publicUrl});}catch(x){fail(x);}};
+  T.querySelectorAll("[data-save]").forEach(b=>b.onclick=async()=>{const k=b.dataset.save;
+    if(k==="about")return up({about:$("#pab").value.trim()||null,hobby:$("#phob").value.trim()||null,video_url:$("#pvid").value.trim()||null,work_start:$("#pws").value?$("#pws").value+"-01":null});
+    if(k==="prices"){const svc=got("psvc");if(!svc.length)return fail({message:"Оставьте хотя бы одну услугу"});const prices=M.services.map((s,i)=>({s,f:$('[data-pf="'+i+'"]').value?+$('[data-pf="'+i+'"]').value:null,t:$('[data-pt="'+i+'"]').value?+$('[data-pt="'+i+'"]').value:null,u:$('[data-pu="'+i+'"]').value})).filter(x=>svc.includes(x.s)&&(x.f||x.t));const mins=prices.map(x=>x.f||x.t).filter(Boolean);return up({services:svc,prices,price_from:mins.length?Math.min(...mins):M.price_from});}
+    if(k==="where"){const c=got("pcty");if(!c.length)return fail({message:"Выберите хотя бы один город"});return up({cities:c,districts:$("#pdist").value.split(",").map(s=>s.trim()).filter(Boolean),work_address:$("#paddr").value.trim()||null});}
+    if(k==="tax"){const tx=$("#ptax").value,u=$("#punp").value.replace(/\D/g,"");if(tx!=="none"&&u.length!==9)return fail({message:"УНП должен состоять из 9 цифр"});const {error}=await sb.from("profiles").update({unp:tx==="none"?null:u}).eq("id",uid());if(error)return fail(error);return up({tax_status:tx,legal_status:TAXS[tx]});}
+    if(k==="works"){const W2=allWorks().map((w,i)=>({u:w.u,s:$('[data-ws2="'+i+'"]').value,c:$('[data-wc2="'+i+'"]').value.trim()}));return up({works:W2,photos:[]});}
+  });
+  T.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{const k=b.dataset.add;const map={work_history:["nw1","nw2","nw3"],education:["ne1","ne2","ne3"],achievements:["na1","na2",null]};const [a,bb,c]=map[k].map(id=>id?$("#"+id).value.trim():"");if(!a||!bb)return fail({message:"Заполните поля"});up({[k]:[...(M[k]||[]),{a,b:bb,c}]});});
+  T.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{const [k,i]=b.dataset.del.split("|");up({[k]:(M[k]||[]).filter((_,j)=>j!==+i)});});
+  T.querySelectorAll("[data-wdel]").forEach(b=>b.onclick=async()=>{const i=+b.dataset.wdel;const W2=allWorks();const w=W2[i];const path=(w.u.split("/works/")[1]||"");if(path)await sb.storage.from("works").remove([decodeURIComponent(path)]);up({works:W2.filter((_,j)=>j!==i),photos:[]});});
+  $("#pworks")&&($("#pworks").onchange=async e=>{const files=[...e.target.files].slice(0,30-allWorks().length);$("#phmsg").textContent="Загружаем…";const add=[];for(const f of files){try{const blob=await shrink(f);const path=uid()+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,7)+".jpg";const {error}=await sb.storage.from("works").upload(path,blob,{contentType:"image/jpeg"});if(error)throw error;add.push({u:sb.storage.from("works").getPublicUrl(path).data.publicUrl,s:M.services[0]||"",c:""});}catch(x){fail(x);}}if(add.length)up({works:[...allWorks(),...add],photos:[]});else $("#phmsg").textContent="";});
+}
+async function vMaster(id){
+  V.innerHTML='<div class="empty">Загрузка…</div>';
+  const m=(await sb.from("masters").select(MCOLS).eq("id",id).maybeSingle()).data;
+  if(!m){V.innerHTML='<div class="empty">Мастер не найден или анкета ещё на проверке.</div>';return;}
+  const rv=(await sb.from("reviews").select("rating,text,master_reply,created_at").eq("master_id",id).eq("hidden",false).order("created_at",{ascending:false})).data||[];
+  const yrs=m.work_start?Math.max(0,Math.floor((Date.now()-new Date(m.work_start))/3.156e10)):null;
+  const W2=[...(m.works||[]),...(m.photos||[]).map(u=>({u,s:"",c:""}))];
+  const sec=(tt,html)=>html?'<div class="card"><h2>'+tt+'</h2>'+html+'</div>':'';
+  const li=a=>(a||[]).map(x=>'<div class="item small"><b>'+esc(x.a)+'</b> — '+esc(x.b)+(x.c?'<div class="muted">'+esc(x.c)+'</div>':'')+'</div>').join("");
+  V.innerHTML='<div class="card"><div class="acts" style="align-items:center">'+(m.photo_url?'<img src="'+esc(m.photo_url)+'" alt="" style="width:96px;height:96px;object-fit:cover;border-radius:50%">':'')+'<div style="flex:1;min-width:200px"><h1>'+esc(m.name)+'</h1><div><span class="stars">'+stars(m.rating)+'</span> '+Number(m.rating).toFixed(1)+' · '+m.reviews_count+' отзывов · выполнено заказов: '+m.done_count+(yrs!==null?' · опыт '+yrs+' лет':'')+'</div><div>'+badges(m)+(m.tax_status==="none"?' <span class="small muted">Специалист не предъявил номер налогоплательщика</span>':'')+'</div></div>'+(m.price_from?'<b>от '+m.price_from+' р.</b>':'')+'</div><div class="acts"><a class="btn" href="#new-'+encodeURIComponent(m.services[0]||"")+'">Создать задание</a></div></div>'
+  +sec("О себе",(m.about?'<div style="white-space:pre-line">'+esc(m.about)+'</div>':'')+(m.hobby?'<div class="small muted">Увлечения: '+esc(m.hobby)+'</div>':'')+(m.video_url&&/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//.test(m.video_url)?'<div><a href="'+esc(m.video_url)+'" target="_blank" rel="noopener">▶ Видеоприветствие</a></div>':''))
+  +sec("Услуги и стоимость",'<div style="display:grid;gap:8px">'+m.services.map(s=>{const p=(m.prices||[]).find(x=>x.s===s);return '<div class="top item"><span>'+esc(s)+'</span><b>'+(p?(p.f&&p.t?p.f+'–'+p.t:p.f?'от '+p.f:'до '+p.t)+' р. / '+esc(p.u||'услугу'):'по договорённости')+'</b></div>';}).join("")+'</div>')
+  +sec("Где работает",'<div><b>Выезд:</b> '+esc(m.cities.join(", "))+((m.districts||[]).length?' ('+esc(m.districts.join(", "))+')':'')+'</div>'+(m.work_address?'<div><b>Работает по адресу:</b> '+esc(m.work_address)+'</div>':''))
+  +sec("Фото работ",W2.length?'<div class="ph">'+W2.map(w=>'<a class="th" href="'+esc(w.u)+'" target="_blank" rel="noopener" title="'+esc([w.s,w.c].filter(Boolean).join(": "))+'"><img src="'+esc(w.u)+'" alt="'+esc(w.c||"Фото работы")+'" loading="lazy"></a>').join("")+'</div>':'')
+  +sec("Опыт работы",li(m.work_history))+sec("Образование",li(m.education))+sec("Достижения",li(m.achievements))
+  +'<div class="card"><h2>Отзывы</h2>'+(rv.length?rv.map(r=>'<div class="item"><div class="top"><span class="stars">'+stars(r.rating)+'</span><span class="small muted">'+dt(r.created_at)+'</span></div>'+(r.text?'<div>'+esc(r.text)+'</div>':'')+(r.master_reply?'<div class="small msg">Ответ мастера: '+esc(r.master_reply)+'</div>':'')+'</div>').join(""):'<div class="empty">Отзывов пока нет. Отзыв можно оставить только после выполненного заказа.</div>')+'</div>';
+}
 /* каталог мастеров */
 let fCity="",fSvc="";
 async function vMasters(){
@@ -405,9 +496,9 @@ async function vMasters(){
   let q=sb.from("masters").select(MCOLS).eq("approved",true).eq("blocked",false).order("rating",{ascending:false}).limit(100);
   if(fCity)q=q.contains("cities",[fCity]);if(fSvc)q=q.contains("services",[fSvc]);
   const {data,error}=await q;if(error)return fail(error);
-  $("#ml").innerHTML=data.length?data.map(m=>'<a class="card" href="#m-'+m.id+'" style="text-decoration:none">'+(m.photos&&m.photos[0]?'<img src="'+esc(m.photos[0])+'" alt="" loading="lazy" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px">':'')+'<div class="top"><h3>'+esc(m.name)+'</h3>'+(m.price_from?'<b>от '+m.price_from+' р.</b>':'')+'</div><div class="small"><span class="stars">'+stars(m.rating)+'</span> '+m.reviews_count+' отзывов · выполнено '+m.done_count+'</div><div class="small muted">'+esc(m.services.slice(0,4).join(", "))+'</div><div class="small muted">'+esc(m.cities.join(", "))+'</div><div>'+badges(m)+'</div></a>').join(""):'<div class="empty">Мастеров по этому фильтру пока нет.</div>';
+  $("#ml").innerHTML=data.length?data.map(m=>'<a class="card" href="#m-'+m.id+'" style="text-decoration:none">'+((m.works&&m.works[0])||(m.photos&&m.photos[0])?'<img src="'+esc(m.works&&m.works[0]?m.works[0].u:m.photos[0])+'" alt="" loading="lazy" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px">':'')+(m.photo_url?'<img src="'+esc(m.photo_url)+'" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover">':'')+'<div class="top"><h3>'+esc(m.name)+'</h3>'+(m.price_from?'<b>от '+m.price_from+' р.</b>':'')+'</div><div class="small"><span class="stars">'+stars(m.rating)+'</span> '+m.reviews_count+' отзывов · выполнено '+m.done_count+'</div><div class="small muted">'+esc(m.services.slice(0,4).join(", "))+'</div><div class="small muted">'+esc(m.cities.join(", "))+'</div><div>'+badges(m)+'</div></a>').join(""):'<div class="empty">Мастеров по этому фильтру пока нет.</div>';
 }
-async function vMaster(id){
+async function vMasterOld(id){
   V.innerHTML='<div class="empty">Загрузка…</div>';
   const m=(await sb.from("masters").select(MCOLS).eq("id",id).maybeSingle()).data;
   if(!m){V.innerHTML='<div class="empty">Мастер не найден или анкета ещё на проверке.</div>';return;}
@@ -435,9 +526,9 @@ async function vAdmin(){
   }
   if(aTab==="mst"){
     const {data,error}=await sb.from("masters").select(MCOLS).order("created_at",{ascending:false});if(error)return fail(error);
-    const ps=(await sb.from("profiles").select("id,phone").in("id",data.map(m=>m.id))).data||[];
+    const ps=(await sb.from("profiles").select("id,phone,unp,full_name").in("id",data.map(m=>m.id))).data||[];
     const flag=(m,k,t)=>'<label style="display:flex;gap:6px;align-items:center;font-weight:600"><input type="checkbox" data-fl="'+m.id+'|'+k+'" style="width:auto"'+(m[k]?' checked':'')+'> '+t+'</label>';
-    A.innerHTML=data.length?data.map(m=>'<div class="card"><div class="top"><h3><a href="#m-'+m.id+'">'+esc(m.name)+'</a></h3>'+(m.blocked?'<span class="chip r">Заблокирован</span>':m.approved?'<span class="chip g">Одобрен</span>':'<span class="chip w">Ждёт проверки</span>')+'</div><div class="small">Телефон: <b style="user-select:all">'+esc((ps.find(p=>p.id===m.id)||{}).phone||"не указан")+'</b> · '+esc(m.legal_status||"")+' · '+esc(m.experience||"")+'</div><div class="small muted">'+esc(m.services.join(", "))+'</div><div class="small muted">'+esc(m.cities.join(", "))+'</div>'+(m.about?'<div class="small">'+esc(m.about)+'</div>':'')+'<div class="acts">'+flag(m,"approved","Одобрен")+flag(m,"verified_passport","Паспорт проверен")+flag(m,"verified_phone","Телефон подтверждён")+flag(m,"blocked","Заблокирован")+'</div></div>').join(""):'<div class="empty">Анкет мастеров пока нет.</div>';
+    A.innerHTML=data.length?data.map(m=>'<div class="card"><div class="top"><h3><a href="#m-'+m.id+'">'+esc(m.name)+'</a></h3>'+(m.blocked?'<span class="chip r">Заблокирован</span>':m.approved?'<span class="chip g">Одобрен</span>':'<span class="chip w">Ждёт проверки</span>')+'</div><div class="small">Телефон: <b style="user-select:all">'+esc((ps.find(p=>p.id===m.id)||{}).phone||"не указан")+'</b> · '+esc((ps.find(p=>p.id===m.id)||{}).full_name||"")+' · '+esc(TAX[m.tax_status]||m.legal_status||"")+((ps.find(p=>p.id===m.id)||{}).unp?' · УНП '+esc(ps.find(p=>p.id===m.id).unp):'')+' · '+esc(m.experience||"")+'</div><div class="small muted">'+esc(m.services.join(", "))+'</div><div class="small muted">'+esc(m.cities.join(", "))+'</div>'+(m.about?'<div class="small">'+esc(m.about)+'</div>':'')+'<div class="acts">'+flag(m,"approved","Одобрен")+flag(m,"verified_passport","Паспорт проверен")+flag(m,"verified_phone","Телефон подтверждён")+flag(m,"verified_tax","УНП проверен")+flag(m,"blocked","Заблокирован")+'</div></div>').join(""):'<div class="empty">Анкет мастеров пока нет.</div>';
     A.querySelectorAll("[data-fl]").forEach(c=>c.onchange=async()=>{const [id,k]=c.dataset.fl.split("|");const {error}=await sb.from("masters").update({[k]:c.checked}).eq("id",id);if(error){c.checked=!c.checked;return fail(error);}});
   }
   if(aTab==="rev"){
