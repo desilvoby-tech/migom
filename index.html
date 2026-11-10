@@ -124,7 +124,7 @@ footer{border-top:1px solid var(--line);padding-block:36px;color:var(--muted);fo
 <body>
 <header><div class="wrap nav">
 <a class="logo" href="#top"><img src="/logo.svg" alt="" width="32" height="32">desilvo</a>
-<nav class="links" aria-label="Разделы"><a href="app.html#tasks">Задания</a><a href="app.html#masters">Мастера</a><a href="#how">Как это работает</a><a href="#faq">Вопросы</a></nav>
+<nav class="links" aria-label="Разделы"><a href="app.html#tasks">Задания</a><a href="app.html#masters">Мастера</a><a href="/ceny">Цены</a><a href="#how">Как это работает</a><a href="#faq">Вопросы</a></nav>
 <div class="sp"><span class="phone">+375 (25) 616-01-36</span><a class="btn ghost" href="app.html#me">Войти</a><a class="btn" href="app.html#new">Создать задание</a></div>
 </div></header>
 <main id="top">
@@ -151,6 +151,15 @@ footer{border-top:1px solid var(--line);padding-block:36px;color:var(--muted);fo
 <div class="sec-head"><h2>Что заказывают прямо сейчас</h2><p>Свежие задания клиентов. Контакты видны только выбранному мастеру.</p></div>
 <div class="feed" id="feed"><div class="empty">Загрузка заданий…</div></div>
 <div class="more"><a class="btn ghost" href="app.html#tasks">Все задания</a></div>
+</div></section>
+<section id="top"><div class="wrap">
+<div class="sec-head"><h2>Топ исполнителей</h2><p>Лучшие по рейтингу и выполненным заказам. Рейтинг складывается только из отзывов клиентов после выполненных заказов.</p></div>
+<div class="feed" id="topm"><div class="empty">Загрузка…</div></div>
+<div class="more"><a class="btn ghost" href="app.html#masters">Все исполнители</a></div>
+</div></section>
+<section id="revs" class="soft" hidden><div class="wrap">
+<div class="sec-head"><h2>Последние отзывы</h2><p>Оставить отзыв может только клиент, чей заказ мастер выполнил.</p></div>
+<div class="feed" id="revl"></div>
 </div></section>
 <section class="soft"><div class="wrap">
 <div class="sec-head"><h2>Почему desilvo</h2></div>
@@ -182,7 +191,7 @@ footer{border-top:1px solid var(--line);padding-block:36px;color:var(--muted);fo
 <section id="pros"><div class="wrap"><div class="pros">
 <div><h2>Ищете клиентов?</h2><p style="margin-top:10px">Регистрируйтесь мастером: получайте задания в своём городе и откликайтесь со своей ценой.</p>
 <ul><li><b>✓</b>Задания по вашим услугам и городам</li><li><b>✓</b>Свой график и свои цены</li><li><b>✓</b>Комиссия только с выполненных заказов</li></ul></div>
-<div style="display:grid;gap:12px;justify-items:start"><a class="btn" href="app.html#me">Стать мастером</a><a href="app.html#tasks" style="color:#9BE07E;font-weight:800">Посмотреть задания</a></div>
+<div style="display:grid;gap:12px;justify-items:start"><a class="btn" href="app.html#reg">Стать мастером</a><a href="app.html#tasks" style="color:#9BE07E;font-weight:800">Посмотреть задания</a></div>
 </div></div></section>
 <section id="faq"><div class="wrap">
 <div class="sec-head"><h2>Частые вопросы</h2></div>
@@ -199,7 +208,7 @@ footer{border-top:1px solid var(--line);padding-block:36px;color:var(--muted);fo
 <footer><div class="wrap">
 <div class="foot">
 <div><a class="logo" href="#top"><img src="/logo.svg" alt="" width="32" height="32">desilvo</a><p style="margin-top:10px;max-width:30em">Сервис поиска мастеров по всей Беларуси.</p></div>
-<div><h3>Клиентам</h3><ul><li><a href="#order">Создать задание</a></li><li><a href="app.html#masters">Мастера</a></li><li><a href="/uslugi/">Услуги по городам</a></li><li><a href="app.html#reg">Стать исполнителем</a></li><li><a href="#how">Как это работает</a></li><li><a href="#faq">Вопросы</a></li></ul></div>
+<div><h3>Клиентам</h3><ul><li><a href="#order">Создать задание</a></li><li><a href="app.html#masters">Мастера</a></li><li><a href="/uslugi/">Услуги по городам</a></li><li><a href="/ceny">Цены на услуги</a></li><li><a href="app.html#reg">Стать исполнителем</a></li><li><a href="#how">Как это работает</a></li><li><a href="#faq">Вопросы</a></li></ul></div>
 <div><h3>Популярное</h3><ul><li><a href="/uslugi/remont-telefona-minsk">Ремонт телефона в Минске</a></li><li><a href="/uslugi/remont-telefona-gomel">Ремонт телефона в Гомеле</a></li><li><a href="/uslugi/elektrik-minsk">Электрик в Минске</a></li><li><a href="/uslugi/santehnik-gomel">Сантехник в Гомеле</a></li><li><a href="/uslugi/remont-kompyutera-gomel">Ремонт компьютера в Гомеле</a></li></ul></div>
 <div><h3>Контакты</h3><ul><li style="user-select:all">+375 (25) 616-01-36</li><li style="user-select:all">info@desilvo.by</li><li>Ежедневно 8:00–21:00</li><li>Вся Беларусь</li></ul></div>
 </div>
@@ -239,6 +248,21 @@ async function loadFeed(){
   $("#feed").innerHTML=data.map(r=>'<div class="task"><div class="top"><h3>'+esc(r.service)+'</h3><span class="price">'+(r.budget?'до '+r.budget+' р.':'')+'</span></div><div class="meta">'+esc(r.city)+(r.when_text?' · '+esc(r.when_text):'')+'</div>'+(r.description?'<p style="color:var(--muted);font-size:.95rem">'+esc(r.description.slice(0,140))+(r.description.length>140?'…':'')+'</p>':'')+'<div><span class="chip'+(r.status==="new"?'':' g')+'">'+(r.status==="new"?'Ищем мастера · откликов: '+r.offers_count:'Выполняется')+'</span></div></div>').join("");
 }
 loadFeed();
+const STR=r=>{r=Math.round(+r||0);return '<span style="color:#F5A623">'+"★★★★★".slice(0,r)+"☆☆☆☆☆".slice(0,5-r)+'</span>';};
+async function loadTop(){
+  if(!SB){$("#topm").innerHTML="";return;}
+  const {data}=await SB.from("masters").select("id,name,services,cities,rating,reviews_count,done_count,price_from,photo_url,verified_phone,verified_passport").eq("approved",true).eq("blocked",false).eq("is_demo",false).order("rating",{ascending:false}).order("done_count",{ascending:false}).order("reviews_count",{ascending:false}).limit(6);
+  if(!data||!data.length){$("#topm").innerHTML='<div class="empty">Исполнители скоро появятся. <a href="app.html#reg">Станьте первым</a>.</div>';return;}
+  $("#topm").innerHTML=data.map(m=>'<a class="task" href="app.html#m-'+m.id+'" style="text-decoration:none;color:inherit"><div class="top" style="display:flex;gap:12px;align-items:center">'+(m.photo_url?'<img src="'+esc(m.photo_url)+'" alt="" style="width:52px;height:52px;border-radius:50%;object-fit:cover">':'')+'<div><h3>'+esc(m.name)+'</h3><div class="meta">'+STR(m.rating)+' '+(+m.rating||0).toFixed(1)+' · '+m.reviews_count+' отзывов · выполнено '+m.done_count+'</div></div></div><div class="meta">'+esc((m.services||[]).slice(0,3).join(", "))+' · '+esc((m.cities||[]).slice(0,2).join(", "))+'</div>'+(m.price_from?'<b>от '+m.price_from+' р.</b>':'')+'<div>'+(m.verified_phone?'<span class="chip g">✓ Телефон подтверждён</span> ':'')+(m.verified_passport?'<span class="chip g">✓ Документы проверены</span>':'')+'</div></a>').join("");
+}
+async function loadRevs(){
+  if(!SB)return;
+  const {data,error}=await SB.from("reviews").select("rating,text,created_at,master_id,masters(name)").eq("hidden",false).order("created_at",{ascending:false}).limit(6);
+  if(error||!data||!data.length)return;
+  $("#revl").innerHTML=data.map(r=>'<div class="task"><div class="top" style="display:flex;justify-content:space-between">'+STR(r.rating)+'<span class="meta">'+new Date(r.created_at).toLocaleDateString("ru-RU")+'</span></div>'+(r.text?'<p>'+esc(r.text.slice(0,220))+'</p>':'')+'<a class="meta" href="app.html#m-'+r.master_id+'">Исполнитель: '+esc((r.masters||{}).name||"")+'</a></div>').join("");
+  $("#revs").hidden=false;
+}
+loadTop();loadRevs();
 async function save(rec){
   let ok=false;
   if(SB){const {error}=await SB.from("requests").insert({service:rec.svc,description:rec.desc||null,city:rec.area,address:rec.addr||null,when_text:rec.when,contact_name:rec.name||null,contact_phone:rec.phone,budget:rec.budget,deadline:rec.deadline});if(error)console.error(error);else ok=true;}
