@@ -1,0 +1,30 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Цены на услуги мастеров в Беларуси — расценки от и до | desilvo</title>
+<meta name="description" content="Расценки мастеров desilvo: цены от и до на ремонт техники, услуги электрика и сантехника, уборку, сборку мебели, красоту, репетиторов и другие услуги по всей Беларуси.">
+<link rel="canonical" href="https://desilvo.by/ceny"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:title" content="Цены на услуги мастеров — desilvo"><meta property="og:image" content="https://desilvo.by/og.png"><meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/uslugi/s.css">
+<style>.ptab{width:100%;border-collapse:collapse;margin:8px 0 22px}.ptab th,.ptab td{padding:10px 8px;border-bottom:1px solid var(--ln);text-align:left;vertical-align:middle}.ptab th{font-size:13px;color:var(--mu);font-weight:600}.ptab td.p{font-weight:800;white-space:nowrap}.ptab .na{color:var(--mu);font-weight:500}.ptab a.sm{font-size:14px;white-space:nowrap}.cat{margin-top:26px}@media(max-width:600px){.ptab .cnt{display:none}.ptab td,.ptab th{padding:9px 4px}}</style>
+</head><body><header><a class="logo" href="/"><img src="/logo.svg" alt="" width="32" height="32">desilvo</a><nav><a href="/uslugi/">Услуги</a><a href="/ceny">Цены</a><a href="/app.html#masters">Исполнители</a><a class="btn" href="/app.html#new">Создать задание</a></nav></header>
+<main>
+<nav class="bc"><a href="/">Главная</a> › Цены</nav>
+<section class="hero"><h1>Цены на услуги мастеров</h1><p>Ориентировочные цены «от – до» по анкетам исполнителей desilvo, обновляются автоматически. Пока исполнителей мало, в расчёт входят и примеры анкет. Точную стоимость мастер назовёт в отклике на ваше задание.</p><a class="btn big" href="/app.html#new">Узнать точную цену</a><p class="small">Создать задание бесплатно. Цены в белорусских рублях.</p></section>
+<div id="pl"><div class="empty" style="margin-top:20px">Загрузка цен…</div></div>
+<h2>Почему цены отличаются</h2><p>На стоимость влияют сложность работы, материалы и запчасти, срочность и выезд. Опишите задачу подробно — так отклики будут точнее, а выбрать мастера можно по цене, рейтингу и отзывам.</p>
+</main>
+<footer><a href="/">desilvo</a> — мастера по всей Беларуси · <a href="/uslugi/">Все услуги</a> · <a href="/app.html#reg">Стать исполнителем</a></footer>
+<script src="/config.js"></script>
+<script>
+(function(){
+var CATS=[["Ремонт техники",["Ремонт телефона","Ремонт ноутбука","Ремонт компьютера","Ремонт телевизора","Ремонт холодильника","Ремонт стиральной машины"]],["Ремонт и строительство",["Мастер на час","Электрик","Сантехник","Плиточник","Ремонт квартиры","Установка дверей"]],["Мебель",["Сборка мебели","Перетяжка мебели","Мебель на заказ"]],["Уборка",["Генеральная уборка","Мойка окон","Химчистка мебели"]],["Красота и здоровье",["Маникюр","Парикмахер","Массаж","Визажист","Наращивание ресниц"]],["Репетиторы",["Репетитор по математике","Репетитор по английскому","Подготовка к ЦЭ"]],["Авто",["Автоэлектрик","Шиномонтаж","Ремонт авто"]],["Мероприятия",["Фотограф","Видеограф","Ведущий","Аниматор"]],["Другие услуги",["Няня","Сиделка","Грузчики","Переезд","Психолог"]]];
+var SEO={"Ремонт телефона":"remont-telefona","Ремонт ноутбука":"remont-noutbuka","Ремонт компьютера":"remont-kompyutera","Ремонт телевизора":"remont-televizora","Ремонт холодильника":"remont-holodilnika","Ремонт стиральной машины":"remont-stiralnoy-mashiny","Электрик":"elektrik","Сантехник":"santehnik","Мастер на час":"master-na-chas","Сборка мебели":"sborka-mebeli","Генеральная уборка":"generalnaya-uborka","Грузчики":"gruzchiki"};
+var E=function(x){return String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;")};
+var el=document.getElementById("pl");
+function draw(ms){
+  var A={};ms.forEach(function(m){var pr=m.prices||[];(m.services||[]).forEach(function(s){var p=pr.filter(function(x){return x.s===s})[0];var lo=p?(p.f||p.t):m.price_from,hi=p?(p.t||p.f):null;if(!lo&&!hi)return;var a=A[s]||(A[s]={lo:1e9,hi:0,n:0,u:{}});a.n++;if(lo)a.lo=Math.min(a.lo,lo);a.hi=Math.max(a.hi,hi||lo||0);if(p&&p.u)a.u[p.u]=1;});});
+  el.innerHTML=CATS.map(function(c){return '<div class="cat"><h2>'+E(c[0])+'</h2><table class="ptab"><tr><th>Услуга</th><th>Цена</th><th class="cnt">Анкет</th><th></th></tr>'+c[1].map(function(s){var a=A[s];var pr=a?(a.hi>a.lo?'от '+a.lo+' до '+a.hi+' р.':'от '+a.lo+' р.')+(Object.keys(a.u).length===1?' / '+E(Object.keys(a.u)[0]):''):'<span class="na">по запросу</span>';var nm=SEO[s]?'<a href="/uslugi/'+SEO[s]+'-minsk">'+E(s)+'</a>':E(s);return '<tr><td>'+nm+'</td><td class="p">'+pr+'</td><td class="cnt">'+(a?a.n:'—')+'</td><td><a class="sm" href="/app.html#new-'+encodeURIComponent(s)+'">'+(a?'Заказать':'Узнать цену')+'</a></td></tr>';}).join("")+'</table></div>';}).join("");
+}
+if(!window.MIGOM){draw([]);return;}
+fetch(MIGOM.url+"/rest/v1/masters?select=services,prices,price_from&approved=eq.true&blocked=eq.false&limit=1000",{headers:{apikey:MIGOM.key,Authorization:"Bearer "+MIGOM.key}}).then(function(r){return r.ok?r.json():[]}).then(draw).catch(function(){draw([])});
+})();
+</script></body></html>
