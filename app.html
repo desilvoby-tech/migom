@@ -61,6 +61,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal)}
 .th{position:relative;display:block;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--bg)}
 .th img{width:100%;height:100%;object-fit:cover;display:block}
 .th button{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:16px;line-height:1}
+.tags{display:flex;flex-wrap:wrap;gap:8px}
+.tag{border:1.5px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:7px 14px;font:600 .9rem var(--body);cursor:pointer}
+.tag:hover{border-color:var(--spark)}
+.tag.on{background:var(--spark);border-color:var(--spark);color:#fff}
 .add{display:grid;place-items:center;aspect-ratio:1;border:1.5px dashed var(--line);border-radius:10px;cursor:pointer;font-weight:700;color:var(--muted)}
 </style>
 </head>
@@ -81,7 +85,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 const CITIES=["Минск","Брест","Витебск","Гомель","Гродно","Могилёв","Барановичи","Бобруйск","Борисов","Пинск","Орша","Мозырь","Солигорск","Новополоцк","Лида","Молодечно","Полоцк","Жлобин","Светлогорск","Речица","Слуцк","Жодино","Другой город"];
-const SERVICES=["Мастер на час","Электрик","Сантехник","Плиточник","Ремонт квартиры","Установка дверей","Ремонт телефона","Ремонт ноутбука","Ремонт телевизора","Ремонт холодильника","Ремонт стиральной машины","Сборка мебели","Перетяжка мебели","Мебель на заказ","Генеральная уборка","Мойка окон","Химчистка мебели","Маникюр","Парикмахер","Массаж","Визажист","Наращивание ресниц","Репетитор по математике","Репетитор по английскому","Подготовка к ЦЭ","Автоэлектрик","Шиномонтаж","Ремонт авто","Фотограф","Видеограф","Ведущий","Аниматор","Няня","Сиделка","Грузчики","Переезд","Психолог","Другое"];
+let SERVICES=["Мастер на час","Электрик","Сантехник","Плиточник","Ремонт квартиры","Установка дверей","Ремонт телефона","Ремонт ноутбука","Ремонт телевизора","Ремонт холодильника","Ремонт стиральной машины","Сборка мебели","Перетяжка мебели","Мебель на заказ","Генеральная уборка","Мойка окон","Химчистка мебели","Маникюр","Парикмахер","Массаж","Визажист","Наращивание ресниц","Репетитор по математике","Репетитор по английскому","Подготовка к ЦЭ","Автоэлектрик","Шиномонтаж","Ремонт авто","Фотограф","Видеограф","Ведущий","Аниматор","Няня","Сиделка","Грузчики","Переезд","Психолог","Другое"];
 const MCOLS="id,name,services,cities,about,experience,legal_status,price_from,photo_url,verified_passport,verified_phone,approved,blocked,rating,reviews_count,done_count,created_at,photos";
 const ST={new:["Ищем мастера","w"],assigned:["Мастер выбран","g"],done:["Выполнена",""],cancelled:["Отменена","r"]};
 const $=s=>document.querySelector(s), V=$("#view");
@@ -121,7 +125,7 @@ function route(){
   if(h.startsWith("m-")) return vMaster(h.slice(2));
   if(h==="masters") return vMasters();
   if(h==="tasks") return vTasks();
-  if(h==="new") return session?vNew():vLogin();
+  if(h==="new"||h.startsWith("new-")) return vNew(h.startsWith("new-")?decodeURIComponent(h.slice(4)):"");
   if(h==="admin") return vAdmin();
   return session?vMe():vLogin();
 }
@@ -290,7 +294,7 @@ async function tRevs(){
   T.innerHTML=data.length?data.map(r=>'<div class="card"><div class="top"><span class="stars">'+stars(r.rating)+'</span><span class="small muted">'+dt(r.created_at)+'</span></div>'+(r.text?'<div>'+esc(r.text)+'</div>':'')+'<form class="acts" data-rp="'+r.id+'"><input name="t" value="'+esc(r.master_reply)+'" placeholder="Ваш ответ на отзыв" style="flex:1"><button class="btn s sm">'+(r.master_reply?'Изменить ответ':'Ответить')+'</button></form></div>').join(""):'<div class="empty">Отзывов пока нет. Они появятся после выполненных заказов.</div>';
   T.querySelectorAll("[data-rp]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const {error}=await sb.from("reviews").update({master_reply:f.t.value.trim()||null}).eq("id",+f.dataset.rp);if(error)return fail(error);tRevs();});
 }
-async function vNew(){
+async function vNewOld(){
   const p=profile||{};
   V.innerHTML='<h1>Создать задание</h1><form class="card" id="nf"><label>Что нужно сделать<input name="svc" list="nsl" required placeholder="Например, заменить смеситель"><datalist id="nsl">'+SERVICES.map(s=>'<option value="'+esc(s)+'">').join("")+'</datalist></label><label>Подробности<textarea name="ds" placeholder="Объём работ, материалы, особенности. Телефон здесь не пишите."></textarea></label><div class="row"><label>Город<select name="ct">'+opts(CITIES,p.city||"Минск")+'</select></label><label>Район или улица<input name="ad" placeholder="Необязательно"></label></div><div class="row"><label>Бюджет, BYN<input name="bg" type="number" min="0" placeholder="Можно оставить пустым"></label><label>Сделать до<input name="dl" type="date" min="'+new Date().toISOString().slice(0,10)+'"></label></div><label>Когда удобно<select name="wh">'+opts(["Как можно скорее","Сегодня","На этой неделе","Не срочно"],"Как можно скорее")+'</select></label><div class="row"><label>Имя<input name="nm" value="'+esc(p.name)+'"></label><label>Телефон для мастера<input name="ph" type="tel" required value="'+esc(p.phone)+'" placeholder="+375 (__) ___-__-__"></label></div><button class="btn">Опубликовать задание</button><p class="small muted">Телефон увидит только мастер, которого вы выберете.</p></form>';
   $("#nf").onsubmit=async e=>{e.preventDefault();const f=e.target;const ph=f.ph.value.trim();if(!f.svc.value.trim())return fail({message:"Напишите, что нужно сделать"});if(ph.replace(/\D/g,"").length<9)return fail({message:"Проверьте номер телефона"});const b=f.querySelector("button");b.disabled=true;
@@ -337,6 +341,61 @@ function vLogin(){
   $("#lf").onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector("button");b.disabled=true;const m=$("#lmsg");
     const {error}=await sb.auth.signInWithOtp({email:$("#lemail").value.trim(),options:{emailRedirectTo:location.origin+location.pathname}});
     m.hidden=false;m.className=error?"err":"msg";m.textContent=error?("Не удалось отправить: "+error.message):"Ссылка отправлена. Откройте письмо на этом устройстве и нажмите на ссылку. Проверьте папку «Спам».";b.disabled=false;};
+}
+const WCATS=[
+ {t:"Ремонт техники",s:["Ремонт телефона","Ремонт ноутбука","Ремонт компьютера","Ремонт телевизора","Ремонт холодильника","Ремонт стиральной машины","Ремонт другой техники"],q:[{n:"Марка",o:["Apple","Samsung","Xiaomi","Huawei/Honor","LG","Bosch","Другая"]},{n:"Что случилось",m:1,o:["Не включается","Разбит экран","Не заряжается","Попала влага","Нет звука","Сильно греется","Не работают кнопки","Шумит или течёт","Другое"]},{n:"Где ремонтировать",o:["На дому у меня","Мастер заберёт","Привезу сам"]}]},
+ {t:"Ремонт и отделка",s:["Мастер на час","Электрик","Сантехник","Плиточник","Ремонт квартиры","Установка дверей","Поклейка обоев","Штукатурка"],q:[{n:"Объём работ",o:["Мелкая работа","Одна комната","Вся квартира","Дом"]},{n:"Материалы",o:["Есть свои","Нужно купить мастеру","Нужна консультация"]}]},
+ {t:"Мебель",s:["Сборка мебели","Ремонт мебели","Перетяжка мебели","Мебель на заказ","Навеска полок"],q:[{n:"Сколько предметов",o:["1","2–3","4 и больше"]},{n:"Подъём",o:["Не нужен","Есть лифт","Без лифта"]}]},
+ {t:"Уборка",s:["Генеральная уборка","Поддерживающая уборка","Уборка после ремонта","Мойка окон","Химчистка мебели","Химчистка ковров"],q:[{n:"Помещение",o:["Квартира","Дом","Офис"]},{n:"Площадь",o:["до 40 м²","40–70 м²","70–100 м²","больше 100 м²"]},{n:"Средства и инвентарь",o:["У мастера","Есть свои"]}]},
+ {t:"Красота и здоровье",s:["Маникюр","Педикюр","Парикмахер","Массаж","Визажист","Наращивание ресниц","Брови"],q:[{n:"Где",o:["У мастера","На дому"]},{n:"Для кого",o:["Для женщины","Для мужчины","Для ребёнка"]}]},
+ {t:"Репетиторы",s:["Репетитор по математике","Репетитор по английскому","Репетитор по русскому","Репетитор по белорусскому","Репетитор по физике","Репетитор по химии","Подготовка к ЦЭ","Начальные классы"],q:[{n:"Кто учится",o:["Школьник","Студент","Взрослый"]},{n:"Цель",o:["Школьная программа","Подготовка к ЦЭ/ЦТ","Олимпиада","Для себя или работы"]},{n:"Формат",o:["Онлайн","У ученика","У репетитора"]}]},
+ {t:"Авто",s:["Автоэлектрик","Шиномонтаж","Диагностика авто","Ремонт двигателя","Ремонт кузова","Помощь на дороге"],q:[{n:"Марка авто",o:["Volkswagen","Renault","Toyota","Audi","BMW","Mercedes","Другая"]},{n:"Где",o:["Выезд мастера","В сервисе"]}]},
+ {t:"Праздники и съёмка",s:["Фотограф","Видеограф","Ведущий","Аниматор","DJ","Оформление шарами"],q:[{n:"Событие",o:["День рождения","Свадьба","Корпоратив","Детский праздник","Другое"]},{n:"Гостей",o:["до 10","10–30","30–100","больше 100"]}]},
+ {t:"Перевозки и грузчики",s:["Грузчики","Грузоперевозка","Переезд","Вывоз мусора"],q:[{n:"Объём",o:["Несколько вещей","Комната","Квартира","Офис"]},{n:"Этаж и лифт",o:["1 этаж или частный дом","Есть лифт","Без лифта"]}]},
+ {t:"Дом и семья",s:["Няня","Сиделка","Домработница","Выгул собак","Психолог"],q:[{n:"Как часто",o:["Разово","Несколько раз в неделю","Каждый день"]}]}
+];
+SERVICES=[...new Set([...WCATS.flatMap(c=>c.s),...SERVICES])];
+let W=null;
+function vNew(pre){
+  const p=profile||{};
+  W={cat:null,svc:"",ans:{},day:null,slot:"В любое время",city:p.city||"Минск"};
+  if(pre){const c=WCATS.find(c=>c.s.includes(pre));if(c)W.cat=c.t;W.svc=pre;}
+  drawNew();
+}
+function drawNew(){
+  const p=profile||{};const c=WCATS.find(x=>x.t===W.cat);
+  const chip=(attr,val,on,txt)=>'<button type="button" class="tag'+(on?' on':'')+'" '+attr+'="'+esc(val)+'">'+esc(txt||val)+'</button>';
+  let h='<h1>Создать задание</h1><div class="card"><h2>1. Что нужно сделать?</h2><div class="tags">'+WCATS.map(x=>chip("data-wc",x.t,x.t===W.cat)).join("")+'</div>';
+  if(c)h+='<div class="tags">'+c.s.map(s=>chip("data-ws",s,s===W.svc)).join("")+'</div>';
+  h+='<label>Коротко о задаче<input id="wsvc" value="'+esc(W.svc)+'" placeholder="Например, заменить экран на телефоне"></label></div>';
+  if(W.svc){
+    h+='<div class="card"><h2>2. Детали</h2>'+(c?c.q.map((q,qi)=>'<div><div class="small" style="font-weight:700;margin-bottom:6px">'+esc(q.n)+(q.m?' (можно несколько)':'')+'</div><div class="tags">'+q.o.map(o=>chip("data-wq",qi+"|"+o,(W.ans[q.n]||[]).includes(o),o)).join("")+'</div></div>').join(""):'')+'<label>Подробное описание<textarea id="wdesc" placeholder="Опишите задачу. Телефон здесь не пишите.">'+esc(W.desc||"")+'</textarea></label></div>';
+    h+='<div class="card"><h2>3. Где</h2><div class="row"><label>Город<select id="wcity">'+opts(CITIES,W.city)+'</select></label><label>Район, улица<input id="waddr" value="'+esc(W.addr||"")+'" placeholder="Необязательно"></label></div></div>';
+    const wd=["Вс","Пн","Вт","Ср","Чт","Пт","Сб"],days=[];for(let i=0;i<14;i++){const d=new Date();d.setDate(d.getDate()+i);days.push(d);}
+    h+='<div class="card"><h2>4. Когда</h2><div class="tags">'+chip("data-wday","",W.day===null,"Не важно")+days.map((d,i)=>{const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");return chip("data-wday",k,W.day===k,(i===0?"Сегодня":i===1?"Завтра":wd[d.getDay()])+", "+d.getDate()+"."+String(d.getMonth()+1).padStart(2,"0"));}).join("")+'</div><div class="tags">'+["В любое время","8:00–12:00","12:00–16:00","16:00–22:00"].map(s=>chip("data-wt",s,W.slot===s)).join("")+'</div></div>';
+    h+='<div class="card"><h2>5. Бюджет</h2><div class="row"><label>Примерная стоимость, BYN<input id="wbud" type="number" min="0" value="'+esc(W.bud||"")+'" placeholder="Можно не указывать"></label><div class="small muted" style="align-self:end">Без суммы задание публикуется с ценой «договорная». Точную стоимость назовёт мастер.</div></div></div>';
+    h+='<div class="card"><h2>6. Контакты</h2><div class="row"><label>Имя<input id="wname" value="'+esc(W.name??p.name??"")+'"></label><label>Телефон<input id="wphone" type="tel" value="'+esc(W.phone??p.phone??"")+'" placeholder="+375 (__) ___-__-__"></label></div><p class="small muted">Телефон увидит только мастер, которого вы выберете.'+(session?'':' <a href="#me">Войдите</a>, чтобы следить за откликами и переписываться с мастерами.')+'</p><div><button class="btn" id="wgo">Опубликовать задание</button></div></div>';
+  }
+  V.innerHTML=h;
+  const keep=()=>{const g=id=>$("#"+id);if(g("wsvc"))W.svc=g("wsvc").value;if(g("wdesc"))W.desc=g("wdesc").value;if(g("wcity"))W.city=g("wcity").value;if(g("waddr"))W.addr=g("waddr").value;if(g("wbud"))W.bud=g("wbud").value;if(g("wname"))W.name=g("wname").value;if(g("wphone"))W.phone=g("wphone").value;};
+  V.querySelectorAll("[data-wc]").forEach(b=>b.onclick=()=>{keep();W.cat=b.dataset.wc;W.ans={};drawNew();});
+  V.querySelectorAll("[data-ws]").forEach(b=>b.onclick=()=>{keep();W.svc=b.dataset.ws;drawNew();});
+  V.querySelectorAll("[data-wq]").forEach(b=>b.onclick=()=>{keep();const i=b.dataset.wq.indexOf("|"),qi=+b.dataset.wq.slice(0,i),o=b.dataset.wq.slice(i+1);const q=c.q[qi];let a=W.ans[q.n]||[];a=a.includes(o)?a.filter(x=>x!==o):(q.m?[...a,o]:[o]);W.ans[q.n]=a;drawNew();});
+  V.querySelectorAll("[data-wday]").forEach(b=>b.onclick=()=>{keep();W.day=b.dataset.wday||null;drawNew();});
+  V.querySelectorAll("[data-wt]").forEach(b=>b.onclick=()=>{keep();W.slot=b.dataset.wt;drawNew();});
+  $("#wsvc").onchange=()=>{keep();drawNew();};
+  const go=$("#wgo");if(go)go.onclick=async()=>{keep();const ph=(W.phone||"").trim();
+    if(!W.svc.trim())return fail({message:"Напишите, что нужно сделать"});if(ph.replace(/\D/g,"").length<9)return fail({message:"Проверьте номер телефона"});
+    const extra=Object.entries(W.ans).filter(([k,v])=>v.length).map(([k,v])=>k+": "+v.join(", ")).join("\n");
+    const desc=[extra,(W.desc||"").trim()].filter(Boolean).join("\n");
+    const when=(W.day?new Date(W.day+"T12:00").toLocaleDateString("ru-RU",{weekday:"short",day:"numeric",month:"long"}):"Дата не важна")+(W.slot&&W.slot!=="В любое время"?", "+W.slot:"");
+    go.disabled=true;
+    const {error}=await sb.from("requests").insert({service:W.svc.trim(),description:desc||null,city:W.city,address:(W.addr||"").trim()||null,budget:W.bud?Math.round(+W.bud):null,deadline:W.day,when_text:when,contact_name:(W.name||"").trim()||null,contact_phone:ph});
+    if(error){go.disabled=false;return fail(error);}
+    if(session&&!(profile&&profile.phone))await sb.from("profiles").update({phone:ph}).eq("id",uid());
+    if(session){meTab="req";reqTab="act";location.hash="#me";}
+    else V.innerHTML='<div class="card"><h1>Задание опубликовано</h1><p>Мастера откликнутся со своими ценами. Выбранный мастер позвонит по номеру '+esc(ph)+'.</p><p>Чтобы видеть отклики и переписываться с мастерами, войдите по этому номеру телефона.</p><div class="acts"><a class="btn" href="#me">Войти</a><a class="btn s" href="#tasks">Смотреть задания</a></div></div>';
+  };
 }
 /* каталог мастеров */
 let fCity="",fSvc="";
