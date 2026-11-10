@@ -85,7 +85,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 const CITIES=["Минск","Брест","Витебск","Гомель","Гродно","Могилёв","Барановичи","Бобруйск","Борисов","Пинск","Орша","Мозырь","Солигорск","Новополоцк","Лида","Молодечно","Полоцк","Жлобин","Светлогорск","Речица","Слуцк","Жодино","Другой город"];
-let SERVICES=["Мастер на час","Электрик","Сантехник","Плиточник","Ремонт квартиры","Установка дверей","Ремонт телефона","Ремонт ноутбука","Ремонт телевизора","Ремонт холодильника","Ремонт стиральной машины","Сборка мебели","Перетяжка мебели","Мебель на заказ","Генеральная уборка","Мойка окон","Химчистка мебели","Маникюр","Парикмахер","Массаж","Визажист","Наращивание ресниц","Репетитор по математике","Репетитор по английскому","Подготовка к ЦЭ","Автоэлектрик","Шиномонтаж","Ремонт авто","Фотограф","Видеограф","Ведущий","Аниматор","Няня","Сиделка","Грузчики","Переезд","Психолог","Другое"];
+let SERVICES=["Мастер на час","Электрик","Сантехник","Плиточник","Ремонт квартиры","Установка дверей","Ремонт телефона","Ремонт ноутбука","Ремонт компьютера","Ремонт телевизора","Ремонт холодильника","Ремонт стиральной машины","Сборка мебели","Перетяжка мебели","Мебель на заказ","Генеральная уборка","Мойка окон","Химчистка мебели","Маникюр","Парикмахер","Массаж","Визажист","Наращивание ресниц","Репетитор по математике","Репетитор по английскому","Подготовка к ЦЭ","Автоэлектрик","Шиномонтаж","Ремонт авто","Фотограф","Видеограф","Ведущий","Аниматор","Няня","Сиделка","Грузчики","Переезд","Психолог","Другое"];
 const MCOLS="id,name,services,cities,about,experience,legal_status,price_from,photo_url,verified_passport,verified_phone,approved,blocked,rating,reviews_count,done_count,created_at,photos,tax_status,verified_tax,districts,work_address,hobby,video_url,work_start,education,work_history,achievements,prices,works";
 const ST={new:["Ищем мастера","w"],assigned:["Мастер выбран","g"],done:["Выполнена",""],cancelled:["Отменена","r"]};
 const $=s=>document.querySelector(s), V=$("#view");
@@ -95,7 +95,7 @@ const stars=n=>"★★★★★".slice(0,Math.round(n))+"☆☆☆☆☆".slice(
 const opts=(a,sel)=>a.map(x=>'<option'+(x===sel?' selected':'')+'>'+esc(x)+'</option>').join("");
 const checks=(name,a,sel)=>'<div class="checks">'+a.map(x=>'<label><input type="checkbox" name="'+name+'" value="'+esc(x)+'"'+((sel||[]).includes(x)?' checked':'')+'>'+esc(x)+'</label>').join("")+'</div>';
 const got=name=>[...document.querySelectorAll('input[name="'+name+'"]:checked')].map(i=>i.value);
-const badges=m=>(m.verified_passport?'<span class="chip">Паспорт проверен</span> ':'')+(m.verified_phone?'<span class="chip">Телефон подтверждён</span> ':'')+(m.legal_status?'<span class="chip '+(m.verified_tax?'':'w')+'">'+esc(m.legal_status)+(m.verified_tax?' ✓':'')+'</span>':'');
+const badges=m=>(m.verified_passport?'<span class="chip">✓ Документы проверены</span> ':'')+(m.verified_phone?'<span class="chip">✓ Телефон подтверждён</span> ':'')+(m.legal_status?'<span class="chip '+(m.verified_tax?'':'w')+'">'+esc(m.legal_status)+(m.verified_tax?' ✓':'')+'</span>':'');
 function fail(e){alert0((e&&e.message)||String(e));}
 function alert0(t){const d=document.createElement("div");d.className="msg err";d.textContent="Ошибка: "+t;V.prepend(d);scrollTo(0,0);}
 
@@ -120,9 +120,12 @@ async function load(){
   $("#logout").hidden=!session; $("#navAdmin").hidden=!(profile&&profile.role==="admin");
 }
 function route(){
-  const h=(location.hash||"#me").slice(1);
-  document.querySelectorAll(".nav a.l").forEach(a=>a.classList.toggle("on",a.dataset.v===h.split("-")[0]));
+  const h=decodeURIComponent((location.hash||"#me").slice(1)), h0=h.split(/[-\/]/)[0];
+  document.querySelectorAll(".nav a.l").forEach(a=>a.classList.toggle("on",a.dataset.v===h0));
+  document.title=({me:"Мой кабинет",masters:"Исполнители",tasks:"Найти задания",reg:"Регистрация исполнителя",new:"Создать задание",admin:"Админка",m:"Анкета исполнителя"}[h0]||"Кабинет")+" — desilvo";
+  if(h.startsWith("masters/")){const p=h.split("/");fSvc=p[1]||"";fCity=p[2]||"";return vMasters();}
   if(h.startsWith("m-")) return vMaster(h.slice(2));
+  if(h.startsWith("new-")) document.title=h.slice(4)+": создать задание — desilvo";
   if(h==="masters") return vMasters();
   if(h==="tasks") return vTasks();
   if(h==="reg"){if(!session){try{sessionStorage.setItem("role","m")}catch(e){}return vLogin();}return vReg();}
@@ -477,6 +480,7 @@ async function vMaster(id){
   if(!m){V.innerHTML='<div class="empty">Мастер не найден или анкета ещё на проверке.</div>';return;}
   const rv=(await sb.from("reviews").select("rating,text,master_reply,created_at").eq("master_id",id).eq("hidden",false).order("created_at",{ascending:false})).data||[];
   if(location.hash!=="#m-"+id)return;
+  document.title=m.name+" — "+(m.services[0]||"исполнитель")+(m.cities[0]?", "+m.cities[0]:"")+" — desilvo";
   const yrs=m.work_start?Math.max(0,Math.floor((Date.now()-new Date(m.work_start))/3.156e10)):null;
   const W2=[...(m.works||[]),...(m.photos||[]).map(u=>({u,s:"",c:""}))];
   const sec=(tt,html)=>html?'<div class="card"><h2>'+tt+'</h2>'+html+'</div>':'';
@@ -490,14 +494,15 @@ async function vMaster(id){
   +'<div class="card"><h2>Отзывы</h2>'+(rv.length?rv.map(r=>'<div class="item"><div class="top"><span class="stars">'+stars(r.rating)+'</span><span class="small muted">'+dt(r.created_at)+'</span></div>'+(r.text?'<div>'+esc(r.text)+'</div>':'')+(r.master_reply?'<div class="small msg">Ответ мастера: '+esc(r.master_reply)+'</div>':'')+'</div>').join(""):'<div class="empty">Отзывов пока нет. Отзыв можно оставить только после выполненного заказа.</div>')+'</div>';
 }
 /* каталог мастеров */
-let fCity="",fSvc="";
+let fCity="",fSvc="",fSort="rating";
 async function vMasters(){
-  V.innerHTML='<h1>Мастера</h1><div class="card"><div class="row"><label>Город<select id="fc"><option value="">Все города</option>'+opts(CITIES,fCity)+'</select></label><label>Услуга<select id="fs"><option value="">Все услуги</option>'+opts(SERVICES,fSvc)+'</select></label></div></div><div id="ml" class="grid"><div class="empty">Загрузка…</div></div>';
-  $("#fc").onchange=e=>{fCity=e.target.value;vMasters();};$("#fs").onchange=e=>{fSvc=e.target.value;vMasters();};
-  let q=sb.from("masters").select(MCOLS).eq("approved",true).eq("blocked",false).order("rating",{ascending:false}).limit(100);
+  V.innerHTML='<h1>Мастера</h1><div class="card"><div class="row"><label>Город<select id="fc"><option value="">Все города</option>'+opts(CITIES,fCity)+'</select></label><label>Услуга<select id="fs"><option value="">Все услуги</option>'+opts(SERVICES,fSvc)+'</select></label><label>Сортировка<select id="fo"><option value="rating"'+(fSort==="rating"?" selected":"")+'>По рейтингу</option><option value="reviews"'+(fSort==="reviews"?" selected":"")+'>По числу отзывов</option><option value="done"'+(fSort==="done"?" selected":"")+'>По выполненным заказам</option><option value="price"'+(fSort==="price"?" selected":"")+'>Сначала дешевле</option></select></label></div></div><div id="ml" class="grid"><div class="empty">Загрузка…</div></div>';
+  $("#fc").onchange=e=>{fCity=e.target.value;vMasters();};$("#fs").onchange=e=>{fSvc=e.target.value;vMasters();};$("#fo").onchange=e=>{fSort=e.target.value;vMasters();};
+  document.title=(fSvc||"Исполнители")+(fCity?" — "+fCity:"")+" — desilvo";
+  let q=sb.from("masters").select(MCOLS).eq("approved",true).eq("blocked",false).order({rating:"rating",reviews:"reviews_count",done:"done_count",price:"price_from"}[fSort]||"rating",{ascending:fSort==="price",nullsFirst:false}).order("reviews_count",{ascending:false}).limit(100);
   if(fCity)q=q.contains("cities",[fCity]);if(fSvc)q=q.contains("services",[fSvc]);
   const {data,error}=await q;if(error)return fail(error);
-  $("#ml").innerHTML=data.length?data.map(m=>'<a class="card" href="#m-'+m.id+'" style="text-decoration:none">'+((m.works&&m.works[0])||(m.photos&&m.photos[0])?'<img src="'+esc(m.works&&m.works[0]?m.works[0].u:m.photos[0])+'" alt="" loading="lazy" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px">':'')+(m.photo_url?'<img src="'+esc(m.photo_url)+'" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover">':'')+'<div class="top"><h3>'+esc(m.name)+'</h3>'+(m.price_from?'<b>от '+m.price_from+' р.</b>':'')+'</div><div class="small"><span class="stars">'+stars(m.rating)+'</span> '+m.reviews_count+' отзывов · выполнено '+m.done_count+'</div><div class="small muted">'+esc(m.services.slice(0,4).join(", "))+'</div><div class="small muted">'+esc(m.cities.join(", "))+'</div><div>'+badges(m)+'</div></a>').join(""):'<div class="empty">Мастеров по этому фильтру пока нет.</div>';
+  $("#ml").innerHTML=data.length?data.map(m=>'<a class="card" href="#m-'+m.id+'" style="text-decoration:none">'+((m.works&&m.works[0])||(m.photos&&m.photos[0])?'<img src="'+esc(m.works&&m.works[0]?m.works[0].u:m.photos[0])+'" alt="" loading="lazy" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px">':'')+(m.photo_url?'<img src="'+esc(m.photo_url)+'" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover">':'')+'<div class="top"><h3>'+esc(m.name)+'</h3>'+(m.price_from?'<b>от '+m.price_from+' р.</b>':'')+'</div><div class="small"><span class="stars">'+stars(m.rating)+'</span> <b>'+Number(m.rating).toFixed(1)+'</b> · '+m.reviews_count+' отзывов · выполнено '+m.done_count+'</div><div class="small muted">'+esc(m.services.slice(0,4).join(", "))+'</div><div class="small muted">'+esc(m.cities.join(", "))+'</div><div>'+badges(m)+'</div></a>').join(""):'<div class="empty">Мастеров по этому фильтру пока нет.</div>';
 }
 async function vMasterOld(id){
   V.innerHTML='<div class="empty">Загрузка…</div>';
