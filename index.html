@@ -153,7 +153,7 @@ footer{border-top:1px solid var(--line);padding-block:36px;color:var(--muted);fo
 <div class="more"><a class="btn ghost" href="app.html#tasks">Все задания</a></div>
 </div></section>
 <section id="best"><div class="wrap">
-<div class="sec-head"><h2>Топ исполнителей</h2><p>Лучшие по рейтингу и выполненным заказам. Рейтинг складывается только из отзывов клиентов после выполненных заказов.</p></div>
+<div class="sec-head"><h2>Исполнители</h2><p>Мастера, которые уже работают на desilvo. Рейтинг появляется только после отзывов клиентов о выполненных заказах.</p></div>
 <div class="feed" id="topm"><div class="empty">Загрузка…</div></div>
 <div class="more"><a class="btn ghost" href="app.html#masters">Все исполнители</a></div>
 </div></section>
@@ -253,7 +253,7 @@ async function loadTop(){
   if(!SB){$("#topm").innerHTML="";return;}
   const {data}=await SB.from("masters").select("id,name,services,cities,rating,reviews_count,done_count,price_from,photo_url,verified_phone,verified_passport").eq("approved",true).eq("blocked",false).eq("is_demo",false).order("rating",{ascending:false}).order("done_count",{ascending:false}).order("reviews_count",{ascending:false}).limit(6);
   if(!data||!data.length){$("#topm").innerHTML='<div class="empty">Исполнители скоро появятся. <a href="app.html#reg">Станьте первым</a>.</div>';return;}
-  $("#topm").innerHTML=data.map(m=>'<a class="task" href="app.html#m-'+m.id+'" style="text-decoration:none;color:inherit"><div class="top" style="display:flex;gap:12px;align-items:center">'+(m.photo_url?'<img src="'+esc(m.photo_url)+'" alt="" style="width:52px;height:52px;border-radius:50%;object-fit:cover">':'')+'<div><h3>'+esc(m.name)+'</h3><div class="meta">'+STR(m.rating)+' '+(+m.rating||0).toFixed(1)+' · '+m.reviews_count+' отзывов · выполнено '+m.done_count+'</div></div></div><div class="meta">'+esc((m.services||[]).slice(0,3).join(", "))+' · '+esc((m.cities||[]).slice(0,2).join(", "))+'</div>'+(m.price_from?'<b>от '+m.price_from+' р.</b>':'')+'<div>'+(m.verified_phone?'<span class="chip g">✓ Телефон подтверждён</span> ':'')+(m.verified_passport?'<span class="chip g">✓ Документы проверены</span>':'')+'</div></a>').join("");
+  $("#topm").innerHTML=data.map(m=>'<a class="task" href="app.html#m-'+m.id+'" style="text-decoration:none;color:inherit"><div class="top" style="display:flex;gap:12px;align-items:center">'+(m.photo_url?'<img src="'+esc(m.photo_url)+'" alt="" style="width:52px;height:52px;border-radius:50%;object-fit:cover">':'')+'<div><h3>'+esc(m.name)+'</h3><div class="meta">'+(m.reviews_count>0?STR(m.rating)+' '+(+m.rating||0).toFixed(1)+' · '+m.reviews_count+' отзывов':'<span style="display:inline-block;padding:1px 8px;border-radius:10px;background:#E8F5E1;color:#2E7D1E;font-weight:600">Новый мастер</span>')+(m.done_count>0?' · выполнено '+m.done_count:'')+'</div></div></div><div class="meta">'+esc((m.services||[]).slice(0,3).join(", "))+' · '+esc((m.cities||[]).slice(0,2).join(", "))+'</div>'+(m.price_from?'<b>от '+m.price_from+' р.</b>':'')+'<div>'+(m.verified_phone?'<span class="chip g">✓ Телефон подтверждён</span> ':'')+(m.verified_passport?'<span class="chip g">✓ Документы проверены</span>':'')+'</div></a>').join("");
 }
 async function loadRevs(){
   if(!SB)return;
