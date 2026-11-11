@@ -8,7 +8,7 @@
 </head><body><header><a class="logo" href="/"><img src="/logo.svg" alt="" width="32" height="32">desilvo</a><nav><a href="/uslugi/">Услуги</a><a href="/ceny">Цены</a><a href="/app.html#masters">Исполнители</a><a class="btn" href="/app.html#new">Создать задание</a></nav></header>
 <main>
 <nav class="bc"><a href="/">Главная</a> › Цены</nav>
-<section class="hero"><h1>Цены на услуги мастеров</h1><p>Ориентировочные цены «от – до» по анкетам исполнителей desilvo, обновляются автоматически. Пока исполнителей мало, в расчёт входят и примеры анкет. Точную стоимость мастер назовёт в отклике на ваше задание.</p><a class="btn big" href="/app.html#new">Узнать точную цену</a><p class="small">Создать задание бесплатно. Цены в белорусских рублях.</p></section>
+<section class="hero"><h1>Цены на услуги мастеров</h1><p>Ориентировочные цены «от – до» по анкетам исполнителей desilvo, обновляются автоматически. Точную стоимость мастер назовёт в отклике на ваше задание.</p><a class="btn big" href="/app.html#new">Узнать точную цену</a><p class="small">Создать задание бесплатно. Цены в белорусских рублях.</p></section>
 <div id="pl"><div class="empty" style="margin-top:20px">Загрузка цен…</div></div>
 <h2>Почему цены отличаются</h2><p>На стоимость влияют сложность работы, материалы и запчасти, срочность и выезд. Опишите задачу подробно — так отклики будут точнее, а выбрать мастера можно по цене, рейтингу и отзывам.</p>
 </main>
@@ -25,6 +25,6 @@ function draw(ms){
   el.innerHTML=CATS.map(function(c){return '<div class="cat"><h2>'+E(c[0])+'</h2><table class="ptab"><tr><th>Услуга</th><th>Цена</th><th class="cnt">Анкет</th><th></th></tr>'+c[1].map(function(s){var a=A[s];var pr=a?(a.hi>a.lo?'от '+a.lo+' до '+a.hi+' р.':'от '+a.lo+' р.')+(Object.keys(a.u).length===1?' / '+E(Object.keys(a.u)[0]):''):'<span class="na">по запросу</span>';var nm=SEO[s]?'<a href="/uslugi/'+SEO[s]+'-minsk">'+E(s)+'</a>':E(s);return '<tr><td>'+nm+'</td><td class="p">'+pr+'</td><td class="cnt">'+(a?a.n:'—')+'</td><td><a class="sm" href="/app.html#new-'+encodeURIComponent(s)+'">'+(a?'Заказать':'Узнать цену')+'</a></td></tr>';}).join("")+'</table></div>';}).join("");
 }
 if(!window.MIGOM){draw([]);return;}
-fetch(MIGOM.url+"/rest/v1/masters?select=services,prices,price_from&approved=eq.true&blocked=eq.false&limit=1000",{headers:{apikey:MIGOM.key,Authorization:"Bearer "+MIGOM.key}}).then(function(r){return r.ok?r.json():[]}).then(draw).catch(function(){draw([])});
+fetch(MIGOM.url+"/rest/v1/masters?select=services,prices,price_from&approved=eq.true&blocked=eq.false&is_demo=eq.false&limit=1000",{headers:{apikey:MIGOM.key,Authorization:"Bearer "+MIGOM.key}}).then(function(r){return r.ok?r.json():[]}).then(draw).catch(function(){draw([])});
 })();
 </script></body></html>
