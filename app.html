@@ -7,9 +7,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Кабинет — desilvo</title><meta name="description" content="Задания и исполнители desilvo: найдите мастера в своём городе или откликайтесь на заказы. Бесплатно для заказчиков, по всей Беларуси."><link rel="canonical" href="https://desilvo.by/app.html"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta property="og:image" content="https://desilvo.by/og.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Manrope:wght@400;500;600;700&display=swap">
-<style>
+<style>@font-face{font-family:"BYN";src:url(/byn.woff) format("woff");unicode-range:U+0183;font-display:swap}
 :root{--bg:#F4F6F9;--surface:#fff;--ink:#101A33;--fg:#141B2D;--muted:#5B6478;--line:#DDE2EB;--spark:#4BAE2F;--teal:#0F8A7E;--danger:#C23B2E;--ok:#1E8E4E;
---display:"Unbounded","Manrope",system-ui,sans-serif;--body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif}
+--display:"BYN","Unbounded","Manrope",system-ui,sans-serif;--body:"BYN","Manrope",system-ui,-apple-system,"Segoe UI",sans-serif}
 *{box-sizing:border-box}[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 var(--body)}
 a{color:inherit}
@@ -134,7 +134,7 @@ async function init(){
   session=(await sb.auth.getSession()).data.session;
   sb.auth.onAuthStateChange(async(ev,s)=>{const changed=(s&&s.user.id)!==uid();session=s;if(changed){await load();route();}});
   await load();
-  if(window.GEO){window.GEO_COLOR="#4BAE2F";const gs=g=>{if(g&&g.city&&CITIES.includes(g.city)){if(!fCity)fCity=g.city;if(!tCity)tCity=g.city;return true}};window.GEO_SILENT=gs;window.GEO_APPLY=g=>{if(g&&g.city&&CITIES.includes(g.city)){fCity=tCity=g.city;route()}};window.GEO_OTHER=()=>{const s=$("#fc")||$("#tc");if(s){s.focus();try{s.showPicker()}catch(_){}}};GEO.start()}
+  if(window.GEO){window.GEO_COLOR="#4BAE2F";window.GEO_CITIES=CITIES.filter(c=>c!=="Другой город");window.GEO_R=80;const gs=g=>{if(g&&g.city&&CITIES.includes(g.city)){if(!fCity)fCity=g.city;if(!tCity)tCity=g.city;return true}};window.GEO_SILENT=gs;window.GEO_APPLY=g=>{if(g&&g.city&&CITIES.includes(g.city)){fCity=tCity=g.city;route()}};window.GEO_OTHER=()=>{const s=$("#fc")||$("#tc");if(s){s.focus();try{s.showPicker()}catch(_){}}};GEO.start()}
   addEventListener("hashchange",route); route();
   $("#logout").onclick=async()=>{await sb.auth.signOut();location.hash="#masters";};
   document.addEventListener("click",e=>{if(e.target.closest("#tgl"))return tgLogin();const b=e.target.closest("[data-chat]");if(b){const [r,m,t]=b.dataset.chat.split("|");openChat(+r,m,t);}});
@@ -691,7 +691,7 @@ try{if(localStorage.getItem("ck_ok"))return}catch(_){}
 var d=document.createElement("div");d.className="ckb";d.setAttribute("role","region");d.setAttribute("aria-label","Уведомление о cookie");
 d.innerHTML='<p>Мы используем cookie и локальное хранилище браузера для работы сайта (вход в аккаунт, черновики, настройки) и для обезличенной статистики посещений (Яндекс.Метрика). Рекламные cookie не используем. Подробнее — в <a href="/politika">Политике обработки персональных данных</a>.</p><button type="button">Понятно</button>';
 d.querySelector("button").onclick=function(){try{localStorage.setItem("ck_ok",String(Date.now()))}catch(_){}d.remove()};
-var st=document.createElement("style");st.textContent=".ckb{position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;max-width:760px;margin:0 auto;background:#141B2D;color:#eef2f7;border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.25);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.ckb p{margin:0;flex:1}.ckb a{color:#9BE07E}.ckb button{flex:none;border:0;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer;background:#4BAE2F;color:#fff}@media(max-width:560px){.ckb{flex-direction:column;align-items:stretch}}";
+var st=document.createElement("style");st.textContent=".ckb{position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;max-width:760px;margin:0 auto;background:#141B2D;color:#eef2f7;border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.25);font:14px/1.45 "BYN",system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.ckb p{margin:0;flex:1}.ckb a{color:#9BE07E}.ckb button{flex:none;border:0;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer;background:#4BAE2F;color:#fff}@media(max-width:560px){.ckb{flex-direction:column;align-items:stretch}}";
 document.head.appendChild(st);document.body.appendChild(d)}
 if(document.body)add();else document.addEventListener("DOMContentLoaded",add)})();
 </script>

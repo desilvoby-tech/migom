@@ -14,9 +14,9 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta property="og:type" content="website"><meta property="og:url" content="https://desilvo.by/"><meta property="og:title" content="desilvo — мастера по всей Беларуси"><meta property="og:description" content="Создайте задание бесплатно, получите отклики с ценами и выберите проверенного мастера."><meta property="og:image" content="https://desilvo.by/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap">
-<style>
+<style>@font-face{font-family:"BYN";src:url(/byn.woff) format("woff");unicode-range:U+0183;font-display:swap}
 :root{--bg:#fff;--soft:#F4F7F2;--fg:#1E2227;--muted:#69707A;--line:#E5E8EB;--green:#4BAE2F;--green-d:#3B9422;--accent:#FF7A2F;--danger:#D2372B;
---font:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:light}
+--font:"BYN","Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:light}
 *{box-sizing:border-box}[hidden]{display:none!important}img{max-width:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.55 var(--font)}
 a{color:inherit}
@@ -250,7 +250,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 $("#cats").innerHTML=CATS.map(c=>'<details class="cat"><summary><svg viewBox="0 0 24 24">'+c.i+'</svg>'+c.t+'</summary><ul>'+c.c.map(k=>'<li class="small muted" style="margin-top:8px;font-weight:600">'+esc(k.t)+'</li>'+k.s.map(s=>'<li><button type="button" data-svc="'+esc(s.t)+'">'+esc(s.t)+'</button></li>').join("")).join("")+'</ul></details>').join("");
 $("#svcList").innerHTML=CATS.flatMap(c=>c.s).map(s=>'<option value="'+esc(s)+'">').join("");
 $("#o-area").innerHTML=CITIES.map(c=>'<option>'+c+'</option>').join("");
-if(window.GEO){window.GEO_COLOR="#4BAE2F";const gsel=g=>{if(g&&g.city&&CITIES.includes(g.city))$("#o-area").value=g.city};window.GEO_SILENT=gsel;window.GEO_APPLY=gsel;window.GEO_OTHER=()=>{};setTimeout(()=>GEO.start(),600);$("#o-area").addEventListener("change",e=>{if(e.target.value!=="Другой город")GEO.set("",e.target.value)})}
+if(window.GEO){window.GEO_COLOR="#4BAE2F";window.GEO_CITIES=CITIES.filter(c=>c!=="Другой город");window.GEO_R=80;const gsel=g=>{if(g&&g.city&&CITIES.includes(g.city))$("#o-area").value=g.city};window.GEO_SILENT=gsel;window.GEO_APPLY=gsel;window.GEO_OTHER=()=>{};setTimeout(()=>GEO.start(),600);$("#o-area").addEventListener("change",e=>{if(e.target.value!=="Другой город")GEO.set("",e.target.value)})}
 $("#o-deadline").min=new Date().toISOString().slice(0,10);
 function goOrder(svc){ location.href="app.html#new"+(svc?"-"+encodeURIComponent(svc):""); return;  if(svc) $("#o-svc").value=svc; $("#order").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"}); setTimeout(()=>$(svc?"#o-desc":"#o-svc").focus({preventScroll:true}),400); }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-svc]"); if(b) goOrder(b.dataset.svc);});
@@ -345,7 +345,7 @@ try{if(localStorage.getItem("ck_ok"))return}catch(_){}
 var d=document.createElement("div");d.className="ckb";d.setAttribute("role","region");d.setAttribute("aria-label","Уведомление о cookie");
 d.innerHTML='<p>Мы используем cookie и локальное хранилище браузера для работы сайта (вход в аккаунт, черновики, настройки) и для обезличенной статистики посещений (Яндекс.Метрика). Рекламные cookie не используем. Подробнее — в <a href="/politika">Политике обработки персональных данных</a>.</p><button type="button">Понятно</button>';
 d.querySelector("button").onclick=function(){try{localStorage.setItem("ck_ok",String(Date.now()))}catch(_){}d.remove()};
-var st=document.createElement("style");st.textContent=".ckb{position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;max-width:760px;margin:0 auto;background:#141B2D;color:#eef2f7;border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.25);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.ckb p{margin:0;flex:1}.ckb a{color:#9BE07E}.ckb button{flex:none;border:0;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer;background:#4BAE2F;color:#fff}@media(max-width:560px){.ckb{flex-direction:column;align-items:stretch}}";
+var st=document.createElement("style");st.textContent=".ckb{position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;max-width:760px;margin:0 auto;background:#141B2D;color:#eef2f7;border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.25);font:14px/1.45 "BYN",system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.ckb p{margin:0;flex:1}.ckb a{color:#9BE07E}.ckb button{flex:none;border:0;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer;background:#4BAE2F;color:#fff}@media(max-width:560px){.ckb{flex-direction:column;align-items:stretch}}";
 document.head.appendChild(st);document.body.appendChild(d)}
 if(document.body)add();else document.addEventListener("DOMContentLoaded",add)})();
 </script>
