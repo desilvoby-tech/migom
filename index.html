@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://cnrvmcwvxpwdxduwifed.supabase.co wss://cnrvmcwvxpwdxduwifed.supabase.co https://formsubmit.co https://get.geojs.io; media-src 'self' blob: https:; object-src 'none'; base-uri 'self'; form-action 'self' https://cnrvmcwvxpwdxduwifed.supabase.co; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://mc.yandex.ru https://mc.yandex.by https://yastatic.net https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://mc.yandex.ru https://mc.yandex.by wss://mc.yandex.ru https://cnrvmcwvxpwdxduwifed.supabase.co wss://cnrvmcwvxpwdxduwifed.supabase.co https://formsubmit.co https://get.geojs.io; media-src 'self' blob: https:; frame-src 'self' https://mc.yandex.ru https://mc.yandex.by; object-src 'none'; base-uri 'self'; form-action 'self' https://cnrvmcwvxpwdxduwifed.supabase.co; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>desilvo — найти мастера в Беларуси: ремонт, услуги, цены и отзывы</title>
@@ -141,6 +141,7 @@ footer{border-top:1px solid var(--line);padding-block:36px;color:var(--muted);fo
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <script>if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}))</script>
+<script src="/ym.js" defer></script>
 </head>
 <body>
 <header><div class="wrap nav">
@@ -197,7 +198,7 @@ footer{border-top:1px solid var(--line);padding-block:36px;color:var(--muted);fo
 <div class="field"><label for="o-svc">Что нужно сделать</label><input id="o-svc" list="svcList" placeholder="Например, заменить смеситель" required><datalist id="svcList"></datalist></div>
 <div class="field"><label for="o-desc">Подробности</label><textarea id="o-desc" placeholder="Объём работ, есть ли материалы, особенности"></textarea></div>
 <div class="row"><div class="field"><label for="o-area">Город</label><select id="o-area"></select></div><div class="field"><label for="o-addr">Район или улица</label><input id="o-addr" placeholder="Необязательно"></div></div>
-<div class="row"><div class="field"><label for="o-budget">Бюджет, BYN</label><input id="o-budget" type="number" min="0" step="1" placeholder="Не знаю — оставьте пустым"></div><div class="field"><label for="o-deadline">Сделать до</label><input id="o-deadline" type="date"></div></div>
+<div class="row"><div class="field"><label for="o-budget">Бюджет, ƃ</label><input id="o-budget" type="number" min="0" step="1" placeholder="Не знаю — оставьте пустым"></div><div class="field"><label for="o-deadline">Сделать до</label><input id="o-deadline" type="date"></div></div>
 <div class="field"><span class="lbl">Когда удобно</span><div class="when">
 <input type="radio" name="when" id="w1" value="Как можно скорее" checked><label for="w1">Как можно скорее</label>
 <input type="radio" name="when" id="w2" value="Сегодня"><label for="w2">Сегодня</label>
@@ -295,7 +296,7 @@ async function loadFeed(){
   if(!SB){$("#feed").innerHTML='<div class="empty">Задания скоро появятся.</div>';return;}
   const {data,error}=await SB.from("public_tasks").select("*").order("created_at",{ascending:false}).limit(6);
   if(error||!data.length){$("#feed").innerHTML='<div class="empty">Пока заданий нет — создайте первое.</div>';return;}
-  $("#feed").innerHTML=data.map(r=>'<div class="task"><div class="top"><h3>'+esc(r.service)+'</h3><span class="price">'+(r.budget?'до '+r.budget+' р.':'')+'</span></div><div class="meta">'+esc(r.city)+(r.when_text?' · '+esc(r.when_text):'')+'</div>'+(r.description?'<p style="color:var(--muted);font-size:.95rem">'+esc(r.description.slice(0,140))+(r.description.length>140?'…':'')+'</p>':'')+'<div><span class="chip'+(r.status==="new"?'':' g')+'">'+(r.status==="new"?'Ищем мастера · откликов: '+r.offers_count:'Выполняется')+'</span></div></div>').join("");
+  $("#feed").innerHTML=data.map(r=>'<div class="task"><div class="top"><h3>'+esc(r.service)+'</h3><span class="price">'+(r.budget?'до '+r.budget+'\u00a0ƃ':'')+'</span></div><div class="meta">'+esc(r.city)+(r.when_text?' · '+esc(r.when_text):'')+'</div>'+(r.description?'<p style="color:var(--muted);font-size:.95rem">'+esc(r.description.slice(0,140))+(r.description.length>140?'…':'')+'</p>':'')+'<div><span class="chip'+(r.status==="new"?'':' g')+'">'+(r.status==="new"?'Ищем мастера · откликов: '+r.offers_count:'Выполняется')+'</span></div></div>').join("");
 }
 loadFeed();
 const STR=r=>{r=Math.round(+r||0);return '<span style="color:#F5A623">'+"★★★★★".slice(0,r)+"☆☆☆☆☆".slice(0,5-r)+'</span>';};
@@ -303,7 +304,7 @@ async function loadTop(){
   if(!SB){$("#topm").innerHTML="";return;}
   const {data}=await SB.from("masters").select("id,name,services,cities,rating,reviews_count,done_count,price_from,photo_url,verified_phone,verified_passport").eq("approved",true).eq("blocked",false).eq("is_demo",false).order("rating",{ascending:false}).order("done_count",{ascending:false}).order("reviews_count",{ascending:false}).limit(6);
   if(!data||!data.length){$("#topm").innerHTML='<div class="empty">Исполнители скоро появятся. <a href="app.html#reg">Станьте первым</a>.</div>';return;}
-  $("#topm").innerHTML=data.map(m=>'<a class="task" href="app.html#m-'+m.id+'" style="text-decoration:none;color:inherit"><div class="top" style="display:flex;gap:12px;align-items:center">'+(m.photo_url?'<img src="'+esc(m.photo_url)+'" alt="" style="width:52px;height:52px;border-radius:50%;object-fit:cover">':'')+'<div><h3>'+esc(m.name)+'</h3><div class="meta">'+(m.reviews_count>0?STR(m.rating)+' '+(+m.rating||0).toFixed(1)+' · '+m.reviews_count+' отзывов':'<span style="display:inline-block;padding:1px 8px;border-radius:10px;background:#E8F5E1;color:#2E7D1E;font-weight:600">Новый мастер</span>')+(m.done_count>0?' · выполнено '+m.done_count:'')+'</div></div></div><div class="meta">'+esc((m.services||[]).slice(0,3).join(", "))+' · '+esc((m.cities||[]).slice(0,2).join(", "))+'</div>'+(m.price_from?'<b>от '+m.price_from+' р.</b>':'')+'<div>'+(m.verified_phone?'<span class="chip g">✓ Телефон подтверждён</span> ':'')+(m.verified_passport?'<span class="chip g">✓ Документы проверены</span>':'')+'</div></a>').join("");
+  $("#topm").innerHTML=data.map(m=>'<a class="task" href="app.html#m-'+m.id+'" style="text-decoration:none;color:inherit"><div class="top" style="display:flex;gap:12px;align-items:center">'+(m.photo_url?'<img src="'+esc(m.photo_url)+'" alt="" style="width:52px;height:52px;border-radius:50%;object-fit:cover">':'')+'<div><h3>'+esc(m.name)+'</h3><div class="meta">'+(m.reviews_count>0?STR(m.rating)+' '+(+m.rating||0).toFixed(1)+' · '+m.reviews_count+' отзывов':'<span style="display:inline-block;padding:1px 8px;border-radius:10px;background:#E8F5E1;color:#2E7D1E;font-weight:600">Новый мастер</span>')+(m.done_count>0?' · выполнено '+m.done_count:'')+'</div></div></div><div class="meta">'+esc((m.services||[]).slice(0,3).join(", "))+' · '+esc((m.cities||[]).slice(0,2).join(", "))+'</div>'+(m.price_from?'<b>от '+m.price_from+'\u00a0ƃ</b>':'')+'<div>'+(m.verified_phone?'<span class="chip g">✓ Телефон подтверждён</span> ':'')+(m.verified_passport?'<span class="chip g">✓ Документы проверены</span>':'')+'</div></a>').join("");
 }
 async function loadRevs(){
   if(!SB)return;
@@ -342,7 +343,7 @@ var REQ="ИП Купцов Д. И., УНП 491544930. 246003, г. Гомель, 
 function add(){var f=document.querySelector("footer");var r=document.createElement("div");r.className="site-req";r.style.cssText="font-size:12px;opacity:.75;margin-top:8px;padding:0 16px 8px;text-align:inherit";r.innerHTML=REQ+'<a href="/politika">Политика обработки персональных данных</a>';if(f){(f.querySelector(".wrap")||f).appendChild(r)}else{r.style.cssText+=";text-align:center;padding:24px 16px";document.body.appendChild(r)}
 try{if(localStorage.getItem("ck_ok"))return}catch(_){}
 var d=document.createElement("div");d.className="ckb";d.setAttribute("role","region");d.setAttribute("aria-label","Уведомление о cookie");
-d.innerHTML='<p>Мы используем cookie и локальное хранилище браузера только для работы сайта: вход в аккаунт, черновики и настройки. Аналитику и рекламные cookie не используем. Подробнее — в <a href="/politika">Политике обработки персональных данных</a>.</p><button type="button">Понятно</button>';
+d.innerHTML='<p>Мы используем cookie и локальное хранилище браузера для работы сайта (вход в аккаунт, черновики, настройки) и для обезличенной статистики посещений (Яндекс.Метрика). Рекламные cookie не используем. Подробнее — в <a href="/politika">Политике обработки персональных данных</a>.</p><button type="button">Понятно</button>';
 d.querySelector("button").onclick=function(){try{localStorage.setItem("ck_ok",String(Date.now()))}catch(_){}d.remove()};
 var st=document.createElement("style");st.textContent=".ckb{position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;max-width:760px;margin:0 auto;background:#141B2D;color:#eef2f7;border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.25);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.ckb p{margin:0;flex:1}.ckb a{color:#9BE07E}.ckb button{flex:none;border:0;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer;background:#4BAE2F;color:#fff}@media(max-width:560px){.ckb{flex-direction:column;align-items:stretch}}";
 document.head.appendChild(st);document.body.appendChild(d)}
