@@ -573,6 +573,17 @@ function profileEditor(){
   T.querySelectorAll("[data-wdel]").forEach(b=>b.onclick=async()=>{const i=+b.dataset.wdel;const W2=allWorks();const w=W2[i];const path=(w.u.split("/works/")[1]||"");if(path)await sb.storage.from("works").remove([decodeURIComponent(path)]);up({works:W2.filter((_,j)=>j!==i),photos:[]});});
   $("#pworks")&&($("#pworks").onchange=async e=>{const files=[...e.target.files].slice(0,30-allWorks().length);$("#phmsg").textContent="Загружаем…";const add=[];for(const f of files){try{const blob=await shrink(f);const path=uid()+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,7)+".jpg";const {error}=await sb.storage.from("works").upload(path,blob,{contentType:"image/jpeg"});if(error)throw error;add.push({u:sb.storage.from("works").getPublicUrl(path).data.publicUrl,s:M.services[0]||"",c:""});}catch(x){fail(x);}}if(add.length)up({works:[...allWorks(),...add],photos:[]});else $("#phmsg").textContent="";});
 }
+
+/* Избранные мастера и жалобы (12.11.2026) */
+async function wireFavCmp(type,id){
+  const fb=$("#favBtn"),cb=$("#cmpBtn"),cf=$("#cmpForm"),cm=$("#cmpMsg");
+  if(fb){if(session){const {data}=await sb.from("fav_masters").select("master_id").eq("master_id",id).maybeSingle();fb.dataset.on=data?"1":"";fb.textContent=data?"★ В избранном":"☆ В избранное"}
+    fb.onclick=async()=>{if(!session){location.hash="#me";return}fb.disabled=true;let error;if(fb.dataset.on){({error}=await sb.from("fav_masters").delete().eq("master_id",id));if(!error){fb.dataset.on="";fb.textContent="☆ В избранное"}}else{({error}=await sb.from("fav_masters").insert({master_id:id}));if(!error){fb.dataset.on="1";fb.textContent="★ В избранном"}}fb.disabled=false;if(error)fail(error)}}
+  if(cb)cb.onclick=()=>{if(!session){location.hash="#me";return}cf.hidden=!cf.hidden};
+  if(cf)cf.onsubmit=async e=>{e.preventDefault();const b=cf.querySelector("button");b.disabled=true;const {error}=await sb.from("complaints").insert({target_type:type,target_id:String(id),reason:$("#cmpR").value,body:$("#cmpB").value.trim()||null});b.disabled=false;cm.hidden=false;if(error){cm.textContent=error.message||"Не удалось отправить";return}cf.hidden=true;cf.reset();cm.textContent="Спасибо! Жалоба отправлена модератору, мы проверим её в ближайшее время."};
+}
+const CMP_REASONS=["Мошенничество","Фальшивые отзывы","Грубость или оскорбления","Не выполнил работу или сорвал сроки","Неверные данные в анкете","Спам или реклама","Другое"];
+const cmpBlock=()=>'<div class="card"><div class="acts"><button class="btn s sm" type="button" id="favBtn">☆ В избранное</button><button class="btn s sm" type="button" id="cmpBtn">Пожаловаться</button></div><form id="cmpForm" hidden style="display:grid;gap:10px;margin-top:12px"><label>Причина<select id="cmpR">'+CMP_REASONS.map(r=>'<option>'+r+'</option>').join("")+'</select></label><label>Подробности<textarea id="cmpB" maxlength="1000" placeholder="Что произошло — по желанию"></textarea></label><button class="btn sm">Отправить жалобу</button></form><p id="cmpMsg" class="small" hidden></p></div>';
 async function vMaster(id){
   V.innerHTML='<div class="empty">Загрузка…</div>';
   const m=(await sb.from("masters").select(MCOLS).eq("id",id).maybeSingle()).data;
@@ -591,15 +602,17 @@ async function vMaster(id){
   +sec("Фото работ",W2.length?'<div class="ph">'+W2.map(w=>'<a class="th" href="'+esc(w.u)+'" target="_blank" rel="noopener" title="'+esc([w.s,w.c].filter(Boolean).join(": "))+'"><img src="'+esc(w.u)+'" alt="'+esc(w.c||"Фото работы")+'" loading="lazy"></a>').join("")+'</div>':'')
   +sec("Опыт работы",li(m.work_history))+sec("Образование",li(m.education))+sec("Достижения",li(m.achievements))
   +'<div class="card"><h2>Отзывы</h2>'+(rv.length?rv.map(r=>'<div class="item"><div class="top"><span class="stars">'+stars(r.rating)+'</span><span class="small muted">'+dt(r.created_at)+'</span></div>'+(r.text?'<div>'+esc(r.text)+'</div>':'')+(r.master_reply?'<div class="small msg">Ответ мастера: '+esc(r.master_reply)+'</div>':'')+'</div>').join(""):'<div class="empty">Отзывов пока нет. Отзыв можно оставить только после выполненного заказа.</div>')+'</div>';
+  V.insertAdjacentHTML("beforeend",cmpBlock());wireFavCmp("master",id);
 }
 /* каталог мастеров */
-let fCity="",fSvc="",fSort="rating";
+let fCity="",fSvc="",fSort="rating",fFav=false;
 async function vMasters(){
-  V.innerHTML='<h1>Мастера</h1><div class="card"><div class="row"><label>Город<select id="fc"><option value="">Все города</option>'+opts(CITIES,fCity)+'</select></label><label>Услуга<select id="fs"><option value="">Все услуги</option>'+opts(SERVICES,fSvc)+'</select></label><label>Сортировка<select id="fo"><option value="rating"'+(fSort==="rating"?" selected":"")+'>По рейтингу</option><option value="reviews"'+(fSort==="reviews"?" selected":"")+'>По числу отзывов</option><option value="done"'+(fSort==="done"?" selected":"")+'>По выполненным заказам</option><option value="price"'+(fSort==="price"?" selected":"")+'>Сначала дешевле</option></select></label></div></div><div id="ml" class="grid"><div class="empty">Загрузка…</div></div>';
-  $("#fc").onchange=e=>{fCity=e.target.value;vMasters();};$("#fs").onchange=e=>{fSvc=e.target.value;vMasters();};$("#fo").onchange=e=>{fSort=e.target.value;vMasters();};
+  V.innerHTML='<h1>Мастера</h1><div class="card"><div class="row"><label>Город<select id="fc"><option value="">Все города</option>'+opts(CITIES,fCity)+'</select></label><label>Услуга<select id="fs"><option value="">Все услуги</option>'+opts(SERVICES,fSvc)+'</select></label><label>Сортировка<select id="fo"><option value="rating"'+(fSort==="rating"?" selected":"")+'>По рейтингу</option><option value="reviews"'+(fSort==="reviews"?" selected":"")+'>По числу отзывов</option><option value="done"'+(fSort==="done"?" selected":"")+'>По выполненным заказам</option><option value="price"'+(fSort==="price"?" selected":"")+'>Сначала дешевле</option></select></label></div>'+(session?'<label style="display:flex;gap:8px;align-items:center;font-weight:600;margin-top:10px"><input type="checkbox" id="ffav" style="width:auto"'+(fFav?' checked':'')+'> Только избранные</label>':'')+'</div><div id="ml" class="grid"><div class="empty">Загрузка…</div></div>';
+  $("#fc").onchange=e=>{fCity=e.target.value;vMasters();};if($("#ffav"))$("#ffav").onchange=e=>{fFav=e.target.checked;vMasters();};$("#fs").onchange=e=>{fSvc=e.target.value;vMasters();};$("#fo").onchange=e=>{fSort=e.target.value;vMasters();};
   document.title=(fSvc||"Исполнители")+(fCity?" — "+fCity:"")+" — desilvo";
   let q=sb.from("masters").select(MCOLS).eq("approved",true).eq("blocked",false).order("is_demo",{ascending:true}).order({rating:"rating",reviews:"reviews_count",done:"done_count",price:"price_from"}[fSort]||"rating",{ascending:fSort==="price",nullsFirst:false}).order("reviews_count",{ascending:false}).limit(100);
   if(fCity)q=q.contains("cities",[fCity]);if(fSvc)q=q.contains("services",[fSvc]);
+  if(fFav&&session){const ids=((await sb.from("fav_masters").select("master_id")).data||[]).map(x=>x.master_id);if(!ids.length){$("#ml").innerHTML='<div class="empty">В избранном пока никого. Откройте анкету мастера и нажмите «☆ В избранное».</div>';return}q=q.in("id",ids)}
   const {data,error}=await q;if(error)return fail(error);
   $("#ml").innerHTML=data.length?data.map(m=>'<a class="card" href="#m-'+m.id+'" style="text-decoration:none">'+((m.works&&m.works[0])||(m.photos&&m.photos[0])?'<img src="'+esc(m.works&&m.works[0]?m.works[0].u:m.photos[0])+'" alt="" loading="lazy" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px">':'')+(m.photo_url?'<img src="'+esc(m.photo_url)+'" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover">':'')+'<div class="top"><h3>'+esc(m.name)+'</h3>'+(m.price_from?'<b>от '+m.price_from+' р.</b>':'')+'</div><div class="small">'+rateLine(m)+'</div><div class="small muted">'+esc(m.services.slice(0,4).join(", "))+'</div><div class="small muted">'+esc(m.cities.join(", "))+'</div><div>'+badges(m)+'</div></a>').join(""):'<div class="empty">Мастеров по этому фильтру пока нет.</div>';
 }
@@ -616,7 +629,7 @@ async function vMasterOld(id){
 let aTab="req";
 async function vAdmin(){
   if(!profile||profile.role!=="admin"){V.innerHTML='<div class="empty">Раздел только для администратора.</div>';return;}
-  V.innerHTML='<h1>Админка</h1><div class="tabs"><button data-a="req" class="'+(aTab==="req"?"on":"")+'">Заявки</button><button data-a="mst" class="'+(aTab==="mst"?"on":"")+'">Мастера</button><button data-a="rev" class="'+(aTab==="rev"?"on":"")+'">Отзывы</button></div><div id="at"><div class="empty">Загрузка…</div></div>';
+  V.innerHTML='<h1>Админка</h1><div class="tabs"><button data-a="req" class="'+(aTab==="req"?"on":"")+'">Заявки</button><button data-a="mst" class="'+(aTab==="mst"?"on":"")+'">Мастера</button><button data-a="rev" class="'+(aTab==="rev"?"on":"")+'">Отзывы</button><button data-a="cmp" class="'+(aTab==="cmp"?"on":"")+'">Жалобы</button></div><div id="at"><div class="empty">Загрузка…</div></div>';
   V.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{aTab=b.dataset.a;vAdmin();});
   const A=$("#at");
   if(aTab==="req"){
@@ -635,6 +648,13 @@ async function vAdmin(){
     const flag=(m,k,t)=>'<label style="display:flex;gap:6px;align-items:center;font-weight:600"><input type="checkbox" data-fl="'+m.id+'|'+k+'" style="width:auto"'+(m[k]?' checked':'')+'> '+t+'</label>';
     A.innerHTML=data.length?data.map(m=>'<div class="card"><div class="top"><h3><a href="#m-'+m.id+'">'+esc(m.name)+'</a></h3>'+(m.blocked?'<span class="chip r">Заблокирован</span>':m.approved?'<span class="chip g">Одобрен</span>':'<span class="chip w">Ждёт проверки</span>')+'</div><div class="small">Телефон: <b style="user-select:all">'+esc((ps.find(p=>p.id===m.id)||{}).phone||"не указан")+'</b> · '+esc((ps.find(p=>p.id===m.id)||{}).full_name||"")+' · '+esc(TAX[m.tax_status]||m.legal_status||"")+((ps.find(p=>p.id===m.id)||{}).unp?' · УНП '+esc(ps.find(p=>p.id===m.id).unp):'')+' · '+esc(m.experience||"")+'</div><div class="small muted">'+esc(m.services.join(", "))+'</div><div class="small muted">'+esc(m.cities.join(", "))+'</div>'+(m.about?'<div class="small">'+esc(m.about)+'</div>':'')+'<div class="acts">'+flag(m,"approved","Одобрен")+flag(m,"verified_passport","Паспорт проверен")+flag(m,"verified_phone","Телефон подтверждён")+flag(m,"verified_tax","УНП проверен")+flag(m,"blocked","Заблокирован")+'</div></div>').join(""):'<div class="empty">Анкет мастеров пока нет.</div>';
     A.querySelectorAll("[data-fl]").forEach(c=>c.onchange=async()=>{const [id,k]=c.dataset.fl.split("|");const {error}=await sb.from("masters").update({[k]:c.checked}).eq("id",id);if(error){c.checked=!c.checked;return fail(error);}});
+  }
+  if(aTab==="cmp"){
+    const {data,error}=await sb.from("complaints").select("*").order("status",{ascending:false}).order("created_at",{ascending:false}).limit(200);if(error)return fail(error);
+    const link=c=>c.target_type==="master"?'<a href="#m-'+esc(c.target_id)+'">Анкета мастера</a>':c.target_type==="task"?'Задание №'+esc(c.target_id):'Отзыв №'+esc(c.target_id);
+    A.innerHTML=data.length?data.map(c=>'<div class="card"><div class="top"><span><b>'+esc(c.reason)+'</b> · '+link(c)+'</span><span class="chip '+(c.status==="new"?"r":"g")+'">'+(c.status==="new"?"Новая":"Разобрана")+'</span></div>'+(c.body?'<div>'+esc(c.body)+'</div>':'')+'<div class="small muted">'+dt(c.created_at)+'</div><div class="acts">'+(c.status==="new"?'<button class="btn sm" data-cd="'+c.id+'">Разобрано</button>':'')+'<button class="btn s sm" data-cx="'+c.id+'">Удалить</button></div></div>').join(""):'<div class="empty">Жалоб нет.</div>';
+    A.querySelectorAll("[data-cd]").forEach(b=>b.onclick=async()=>{const {error}=await sb.from("complaints").update({status:"done"}).eq("id",+b.dataset.cd);if(error)return fail(error);vAdmin();});
+    A.querySelectorAll("[data-cx]").forEach(b=>b.onclick=async()=>{const {error}=await sb.from("complaints").delete().eq("id",+b.dataset.cx);if(error)return fail(error);vAdmin();});
   }
   if(aTab==="rev"){
     const {data,error}=await sb.from("reviews").select("id,rating,text,hidden,created_at,master_id,masters(name)").order("created_at",{ascending:false});if(error)return fail(error);
