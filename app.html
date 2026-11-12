@@ -65,6 +65,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal)}
 .tag{border:1.5px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:7px 14px;font:600 .9rem var(--body);cursor:pointer}
 .tag:hover{border-color:var(--spark)}
 .tag.on{background:var(--spark);border-color:var(--spark);color:#fff}
+.wsg:hover{background:var(--line)}
 .add{display:grid;place-items:center;aspect-ratio:1;border:1.5px dashed var(--line);border-radius:10px;cursor:pointer;font-weight:700;color:var(--muted)}
 </style>
 </head>
@@ -373,42 +374,76 @@ const WCATS=[
 ];
 SERVICES=[...new Set([...WCATS.flatMap(c=>c.s),...SERVICES])];
 let W=null;
+const WKEY="desilvo-draft";
+function wSave(){try{sessionStorage.setItem(WKEY,JSON.stringify(W))}catch(e){}}
 function vNew(pre){
   const p=profile||{};
-  W={cat:null,svc:"",ans:{},day:null,slot:"В любое время",city:p.city||"Минск"};
-  if(pre){const c=WCATS.find(c=>c.s.includes(pre));if(c)W.cat=c.t;W.svc=pre;}
+  let saved=null;try{saved=JSON.parse(sessionStorage.getItem(WKEY)||"null")}catch(e){}
+  W=saved&&!pre?saved:{cat:null,svc:"",ans:{},other:{},day:null,slot:"В любое время",city:p.city||"Минск",step:0};
+  if(!W.other)W.other={};if(W.step==null)W.step=0;
+  if(pre){const c=WCATS.find(c=>c.s.includes(pre));if(c)W.cat=c.t;W.svc=pre;W.step=c?1:1;}
   drawNew();
 }
+const ALLSVC=()=>WCATS.flatMap(c=>c.s.map(s=>({s,c:c.t})));
+function wSteps(){const c=WCATS.find(x=>x.t===W.cat);return ["svc",...(c?c.q.map((q,i)=>"q"+i):[]),"desc","where","when","budget","contacts"];}
 function drawNew(){
-  const p=profile||{};const c=WCATS.find(x=>x.t===W.cat);
+  const p=profile||{};const c=WCATS.find(x=>x.t===W.cat);const steps=wSteps();
+  if(W.step>=steps.length)W.step=steps.length-1;
+  const st=steps[W.step],pct=Math.round(W.step/(steps.length-1)*99);
   const chip=(attr,val,on,txt)=>'<button type="button" class="tag'+(on?' on':'')+'" '+attr+'="'+esc(val)+'">'+esc(txt||val)+'</button>';
-  let h='<h1>Создать задание</h1><div class="card"><h2>1. Что нужно сделать?</h2><div class="tags">'+WCATS.map(x=>chip("data-wc",x.t,x.t===W.cat)).join("")+'</div>';
-  if(c)h+='<div class="tags">'+c.s.map(s=>chip("data-ws",s,s===W.svc)).join("")+'</div>';
-  h+='<label>Коротко о задаче<input id="wsvc" value="'+esc(W.svc)+'" placeholder="Например, заменить экран на телефоне"></label></div>';
-  if(W.svc){
-    h+='<div class="card"><h2>2. Детали</h2>'+(c?c.q.map((q,qi)=>'<div><div class="small" style="font-weight:700;margin-bottom:6px">'+esc(q.n)+(q.m?' (можно несколько)':'')+'</div><div class="tags">'+q.o.map(o=>chip("data-wq",qi+"|"+o,(W.ans[q.n]||[]).includes(o),o)).join("")+'</div></div>').join(""):'')+'<label>Подробное описание<textarea id="wdesc" placeholder="Опишите задачу. Телефон здесь не пишите.">'+esc(W.desc||"")+'</textarea></label></div>';
-    h+='<div class="card"><h2>3. Где</h2><div class="row"><label>Город<select id="wcity">'+opts(CITIES,W.city)+'</select></label><label>Район, улица<input id="waddr" value="'+esc(W.addr||"")+'" placeholder="Необязательно"></label></div></div>';
+  let body="",title="",hint="";
+  if(st==="svc"){
+    title="Выберите услугу";
+    body='<div style="position:relative"><input id="wsvc" autocomplete="off" value="'+esc(W.svc)+'" placeholder="Что нужно выполнить? Какой специалист нужен?"><div id="wsug" class="card" style="position:absolute;left:0;right:0;top:100%;z-index:5;padding:6px;margin-top:4px;display:none"></div></div>'
+      +'<div class="small muted" style="margin:14px 0 6px">Или выберите из категорий:</div><div class="tags">'+WCATS.map(x=>chip("data-wc",x.t,x.t===W.cat)).join("")+'</div>'
+      +(c?'<div class="tags" style="margin-top:8px">'+c.s.map(s=>chip("data-ws",s,s===W.svc)).join("")+'</div>':"");
+  } else if(st[0]==="q"){
+    const qi=+st.slice(1),q=c.q[qi];title=q.n+"?";hint=q.m?"Можно выбрать несколько вариантов.":"";
+    body='<div class="tags">'+q.o.map(o=>chip("data-wq",qi+"|"+o,(W.ans[q.n]||[]).includes(o),o)).join("")+'</div><label style="margin-top:12px">Другой вариант<input id="wother" value="'+esc(W.other[q.n]||"")+'" placeholder="Если нет подходящего — напишите своими словами"></label>';
+  } else if(st==="desc"){
+    title="Остались пожелания к заказу?";hint="Объём работ, материалы, особенности. Телефон здесь не пишите — его увидит только выбранный мастер.";
+    body='<textarea id="wdesc" rows="5" placeholder="Например: стиральная машина Samsung, не сливает воду, на экране ошибка 5E">'+esc(W.desc||"")+'</textarea>';
+  } else if(st==="where"){
+    title="Ваш адрес или район";hint="Мастера увидят город и район. Точный адрес сообщите выбранному мастеру.";
+    body='<div class="row"><label>Город<select id="wcity">'+opts(CITIES,W.city)+'</select></label><label>Район, улица<input id="waddr" value="'+esc(W.addr||"")+'" placeholder="Необязательно"></label></div>';
+  } else if(st==="when"){
+    title="Когда нужно выполнить?";
     const wd=["Вс","Пн","Вт","Ср","Чт","Пт","Сб"],days=[];for(let i=0;i<14;i++){const d=new Date();d.setDate(d.getDate()+i);days.push(d);}
-    h+='<div class="card"><h2>4. Когда</h2><div class="tags">'+chip("data-wday","",W.day===null,"Не важно")+days.map((d,i)=>{const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");return chip("data-wday",k,W.day===k,(i===0?"Сегодня":i===1?"Завтра":wd[d.getDay()])+", "+d.getDate()+"."+String(d.getMonth()+1).padStart(2,"0"));}).join("")+'</div><div class="tags">'+["В любое время","8:00–12:00","12:00–16:00","16:00–22:00"].map(s=>chip("data-wt",s,W.slot===s)).join("")+'</div></div>';
-    h+='<div class="card"><h2>5. Бюджет</h2><div class="row"><label>Примерная стоимость, BYN<input id="wbud" type="number" min="0" value="'+esc(W.bud||"")+'" placeholder="Можно не указывать"></label><div class="small muted" style="align-self:end">Без суммы задание публикуется с ценой «договорная». Точную стоимость назовёт мастер.</div></div></div>';
-    h+='<div class="card"><h2>6. Контакты</h2><div class="row"><label>Имя<input id="wname" value="'+esc(W.name??p.name??"")+'"></label><label>Телефон<input id="wphone" type="tel" value="'+esc(W.phone??p.phone??"")+'" placeholder="+375 (__) ___-__-__"></label></div><p class="small muted">Телефон увидит только мастер, которого вы выберете.'+(session?'':' <a href="#me">Войдите</a>, чтобы следить за откликами и переписываться с мастерами.')+'</p><div><button class="btn" id="wgo">Опубликовать задание</button></div></div>';
+    body='<div class="tags">'+chip("data-wday","",W.day===null,"Не важно")+days.map((d,i)=>{const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");return chip("data-wday",k,W.day===k,(i===0?"Сегодня":i===1?"Завтра":wd[d.getDay()])+", "+d.getDate()+"."+String(d.getMonth()+1).padStart(2,"0"));}).join("")+'</div><div class="small muted" style="margin:12px 0 6px">Удобное время</div><div class="tags">'+["В любое время","8:00–12:00","12:00–16:00","16:00–22:00"].map(s=>chip("data-wt",s,W.slot===s)).join("")+'</div>';
+  } else if(st==="budget"){
+    title="Бюджет";hint="Можно не указывать — тогда цена «договорная». Точную стоимость мастер назовёт в отклике.";
+    body='<label>Примерная стоимость, BYN<input id="wbud" type="number" min="0" inputmode="numeric" value="'+esc(W.bud||"")+'" placeholder="Например, 50"></label>';
+  } else {
+    title="Контакты";hint="Телефон увидит только мастер, которого вы выберете."+(session?"":" Войдите, чтобы следить за откликами и переписываться с мастерами.");
+    body='<div class="row"><label>Имя<input id="wname" value="'+esc(W.name??p.name??"")+'"></label><label>Телефон<input id="wphone" type="tel" value="'+esc(W.phone??p.phone??"")+'" placeholder="+375 (__) ___-__-__"></label></div>';
   }
-  V.innerHTML=h;
-  const keep=()=>{const g=id=>$("#"+id);if(g("wsvc"))W.svc=g("wsvc").value;if(g("wdesc"))W.desc=g("wdesc").value;if(g("wcity"))W.city=g("wcity").value;if(g("waddr"))W.addr=g("waddr").value;if(g("wbud"))W.bud=g("wbud").value;if(g("wname"))W.name=g("wname").value;if(g("wphone"))W.phone=g("wphone").value;};
-  V.querySelectorAll("[data-wc]").forEach(b=>b.onclick=()=>{keep();W.cat=b.dataset.wc;W.ans={};drawNew();});
-  V.querySelectorAll("[data-ws]").forEach(b=>b.onclick=()=>{keep();W.svc=b.dataset.ws;drawNew();});
-  V.querySelectorAll("[data-wq]").forEach(b=>b.onclick=()=>{keep();const i=b.dataset.wq.indexOf("|"),qi=+b.dataset.wq.slice(0,i),o=b.dataset.wq.slice(i+1);const q=c.q[qi];let a=W.ans[q.n]||[];a=a.includes(o)?a.filter(x=>x!==o):(q.m?[...a,o]:[o]);W.ans[q.n]=a;drawNew();});
+  const last=st==="contacts";
+  V.innerHTML='<div class="card" style="max-width:640px;margin:0 auto">'
+    +'<div class="small muted">'+(W.svc&&st!=="svc"?esc(W.svc)+' · ':'')+'Заявка заполнена на '+pct+'%</div><div style="height:4px;background:var(--line);border-radius:4px;margin:6px 0 18px"><div style="height:4px;width:'+pct+'%;background:var(--spark);border-radius:4px;transition:width .2s"></div></div>'
+    +'<h1 style="font-size:1.5rem;margin:0 0 6px">'+esc(title)+'</h1>'+(hint?'<p class="small muted" style="margin:0 0 14px">'+esc(hint)+'</p>':'')+body
+    +'<p id="werr" class="err small" hidden></p><div class="acts" style="justify-content:flex-end;margin-top:18px">'+(W.step>0?'<button type="button" class="btn s" id="wback">← Назад</button>':'')+'<button type="button" class="btn" id="'+(last?'wgo':'wnext')+'">'+(last?'Опубликовать задание':'Продолжить')+'</button></div></div>';
+  const keep=()=>{const g=id=>$("#"+id);if(g("wsvc"))W.svc=g("wsvc").value;if(g("wdesc"))W.desc=g("wdesc").value;if(g("wcity"))W.city=g("wcity").value;if(g("waddr"))W.addr=g("waddr").value;if(g("wbud"))W.bud=g("wbud").value;if(g("wname"))W.name=g("wname").value;if(g("wphone"))W.phone=g("wphone").value;
+    if(g("wother")&&c){const q=c.q[+st.slice(1)];W.other[q.n]=g("wother").value;}wSave();};
+  const err=m=>{const e=$("#werr");e.textContent=m;e.hidden=false;};
+  V.querySelectorAll("[data-wc]").forEach(b=>b.onclick=()=>{keep();W.cat=b.dataset.wc;W.ans={};W.other={};if(!WCATS.find(x=>x.t===W.cat).s.includes(W.svc))W.svc="";drawNew();});
+  V.querySelectorAll("[data-ws]").forEach(b=>b.onclick=()=>{keep();W.svc=b.dataset.ws;W.step=1;wSave();drawNew();});
+  V.querySelectorAll("[data-wq]").forEach(b=>b.onclick=()=>{keep();const i=b.dataset.wq.indexOf("|"),qi=+b.dataset.wq.slice(0,i),o=b.dataset.wq.slice(i+1);const q=c.q[qi];let a=W.ans[q.n]||[];a=a.includes(o)?a.filter(x=>x!==o):(q.m?[...a,o]:[o]);W.ans[q.n]=a;wSave();if(!q.m&&a.length){W.step++;}drawNew();});
   V.querySelectorAll("[data-wday]").forEach(b=>b.onclick=()=>{keep();W.day=b.dataset.wday||null;drawNew();});
   V.querySelectorAll("[data-wt]").forEach(b=>b.onclick=()=>{keep();W.slot=b.dataset.wt;drawNew();});
-  $("#wsvc").onchange=()=>{keep();drawNew();};
+  const si=$("#wsvc");if(si){const sug=$("#wsug");const show=()=>{const q=si.value.trim().toLowerCase();if(q.length<2){sug.style.display="none";return;}const m=ALLSVC().filter(x=>x.s.toLowerCase().includes(q)||x.c.toLowerCase().includes(q)).slice(0,8);sug.innerHTML=m.length?m.map(x=>'<div class="wsg" data-s="'+esc(x.s)+'" data-c="'+esc(x.c)+'" style="padding:8px 10px;cursor:pointer;border-radius:8px"><b>'+esc(x.s)+'</b> <span class="small muted">'+esc(x.c)+'</span></div>').join(""):'<div class="small muted" style="padding:8px 10px">Нет в списке — опишите своими словами и нажмите «Продолжить»</div>';sug.style.display="block";sug.querySelectorAll(".wsg").forEach(d=>d.onmousedown=e=>{e.preventDefault();W.svc=d.dataset.s;W.cat=d.dataset.c;W.ans={};W.other={};W.step=1;wSave();drawNew();});};si.oninput=show;si.onfocus=show;si.onblur=()=>setTimeout(()=>sug.style.display="none",150);si.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("#wnext").click();}};si.focus();}
+  const bk=$("#wback");if(bk)bk.onclick=()=>{keep();W.step=Math.max(0,W.step-1);wSave();drawNew();};
+  const nx=$("#wnext");if(nx)nx.onclick=()=>{keep();
+    if(st==="svc"){if(!W.svc.trim())return err("Напишите, что нужно сделать, или выберите услугу");const m=ALLSVC().find(x=>x.s.toLowerCase()===W.svc.trim().toLowerCase());if(m){W.svc=m.s;W.cat=m.c;}}
+    W.step++;wSave();drawNew();window.scrollTo(0,0);};
   const go=$("#wgo");if(go)go.onclick=async()=>{keep();const ph=(W.phone||"").trim();
-    if(!W.svc.trim())return fail({message:"Напишите, что нужно сделать"});if(ph.replace(/\D/g,"").length<9)return fail({message:"Проверьте номер телефона"});
-    const extra=Object.entries(W.ans).filter(([k,v])=>v.length).map(([k,v])=>k+": "+v.join(", ")).join("\n");
+    if(!W.svc.trim()){W.step=0;drawNew();return;}if(ph.replace(/\D/g,"").length<9)return err("Проверьте номер телефона");
+    const extra=Object.keys({...W.ans,...W.other}).map(k=>{const v=[...(W.ans[k]||[]),...((W.other[k]||"").trim()?[W.other[k].trim()]:[])];return v.length?k+": "+v.join(", "):""}).filter(Boolean).join("\n");
     const desc=[extra,(W.desc||"").trim()].filter(Boolean).join("\n");
     const when=(W.day?new Date(W.day+"T12:00").toLocaleDateString("ru-RU",{weekday:"short",day:"numeric",month:"long"}):"Дата не важна")+(W.slot&&W.slot!=="В любое время"?", "+W.slot:"");
     go.disabled=true;
     const {error}=await sb.from("requests").insert({service:W.svc.trim(),description:desc||null,city:W.city,address:(W.addr||"").trim()||null,budget:W.bud?Math.round(+W.bud):null,deadline:W.day,when_text:when,contact_name:(W.name||"").trim()||null,contact_phone:ph});
     if(error){go.disabled=false;return fail(error);}
+    try{sessionStorage.removeItem(WKEY)}catch(e){}
     if(session&&!(profile&&profile.phone))await sb.from("profiles").update({phone:ph}).eq("id",uid());
     if(session){meTab="req";reqTab="act";location.hash="#me";}
     else V.innerHTML='<div class="card"><h1>Задание опубликовано</h1><p>Мастера откликнутся со своими ценами. Выбранный мастер позвонит по номеру '+esc(ph)+'.</p><p>Чтобы видеть отклики и переписываться с мастерами, войдите по этому номеру телефона.</p><div class="acts"><a class="btn" href="#me">Войти</a><a class="btn s" href="#tasks">Смотреть задания</a></div></div>';
