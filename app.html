@@ -84,6 +84,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal)}
 </div></header>
 <main class="wrap" id="view"><div class="empty">Загрузка…</div></main>
 <script src="config.js"></script>
+<script src="cats.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 const CITIES=["Минск","Брест","Витебск","Гомель","Гродно","Могилёв","Барановичи","Бобруйск","Борисов","Пинск","Орша","Мозырь","Солигорск","Новополоцк","Лида","Молодечно","Полоцк","Жлобин","Светлогорск","Речица","Слуцк","Жодино","Другой город"];
@@ -278,7 +279,7 @@ async function tFeedOld(){
   const {data,error}=await sb.from("public_tasks").select("*").eq("status","new").order("created_at",{ascending:false}).limit(200);
   if(error)return fail(error);
   const mine=new Set(((await sb.from("offers").select("request_id").eq("master_id",uid())).data||[]).map(o=>o.request_id));
-  const list=data.filter(r=>!onlyMine||(master.cities.includes(r.city)&&(master.services.includes(r.service)||!SERVICES.includes(r.service))));
+  const list=data.filter(r=>!onlyMine||(master.cities.includes(r.city)&&(sameCat(master.services,r.service)||!SERVICES.includes(r.service))));
   T.innerHTML='<label class="small" style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" id="om" style="width:auto"'+(onlyMine?' checked':'')+'> Только мои города и услуги</label>'
   +(list.length?list.map(r=>'<div class="card"><div class="top"><h2>'+esc(r.service)+'</h2><span class="muted small">'+dt(r.created_at)+'</span></div><div class="muted small">'+esc(r.city)+(r.when_text?' · '+esc(r.when_text):'')+' · откликов: '+r.offers_count+'</div>'+bd(r)+(r.description?'<div>'+esc(r.description)+'</div>':'')
     +(mine.has(r.id)?'<div class="acts"><span class="chip g">Вы откликнулись</span><button class="btn s sm" data-chat="'+r.id+'|'+uid()+'|Клиент">Чат с клиентом</button></div>':'<form class="acts" data-of="'+r.id+'"><input name="pr" placeholder="Цена, например «от 40 р.»" style="flex:1;min-width:160px"><input name="ms" list="mtpl" placeholder="Комментарий клиенту (шаблоны — в «Настройках»)" style="flex:2;min-width:200px"><button class="btn sm">Готов выполнить</button></form>')+'</div>').join(""):'<div class="empty">Подходящих заявок сейчас нет.</div>');
@@ -331,7 +332,7 @@ async function tFeed(){
   const {data,error}=await sb.from("public_tasks").select("*").eq("status","new").order("created_at",{ascending:false}).limit(300);if(error)return fail(error);
   const mine=new Set(((await sb.from("offers").select("request_id").eq("master_id",uid())).data||[]).map(o=>o.request_id));
   let list=data;
-  if(feedTab==="rec")list=list.filter(r=>master.cities.includes(r.city)&&(master.services.includes(r.service)||!SERVICES.includes(r.service)));
+  if(feedTab==="rec")list=list.filter(r=>master.cities.includes(r.city)&&(sameCat(master.services,r.service)||!SERVICES.includes(r.service)));
   if(feedTab==="all"){if(fCity2)list=list.filter(r=>r.city===fCity2);if(fSvc2)list=list.filter(r=>r.service===fSvc2);}
   const shown=list.slice(0,feedLim);
   T.innerHTML='<div class="tabs"><button data-ft="rec" class="'+(feedTab==="rec"?"on":"")+'">Рекомендованные</button><button data-ft="all" class="'+(feedTab==="all"?"on":"")+'">Все задания</button></div>'
@@ -414,18 +415,9 @@ function vLogin(){
     const {error}=await sb.auth.signInWithOtp({email:$("#lemail").value.trim(),options:{emailRedirectTo:location.origin+location.pathname}});
     m.hidden=false;m.className=error?"err":"msg";m.textContent=error?("Не удалось отправить: "+error.message):"Ссылка отправлена. Откройте письмо на этом устройстве и нажмите на ссылку. Проверьте папку «Спам».";b.disabled=false;};
 }
-const WCATS=[
- {t:"Ремонт техники",s:["Ремонт телефона","Ремонт ноутбука","Ремонт компьютера","Ремонт телевизора","Ремонт холодильника","Ремонт стиральной машины","Ремонт другой техники"],q:[{n:"Марка",o:["Apple","Samsung","Xiaomi","Huawei/Honor","LG","Bosch","Другая"]},{n:"Что случилось",m:1,o:["Не включается","Разбит экран","Не заряжается","Попала влага","Нет звука","Сильно греется","Не работают кнопки","Шумит или течёт","Другое"]},{n:"Где ремонтировать",o:["На дому у меня","Мастер заберёт","Привезу сам"]}]},
- {t:"Ремонт и отделка",s:["Мастер на час","Электрик","Сантехник","Плиточник","Ремонт квартиры","Установка дверей","Поклейка обоев","Штукатурка"],q:[{n:"Объём работ",o:["Мелкая работа","Одна комната","Вся квартира","Дом"]},{n:"Материалы",o:["Есть свои","Нужно купить мастеру","Нужна консультация"]}]},
- {t:"Мебель",s:["Сборка мебели","Ремонт мебели","Перетяжка мебели","Мебель на заказ","Навеска полок"],q:[{n:"Сколько предметов",o:["1","2–3","4 и больше"]},{n:"Подъём",o:["Не нужен","Есть лифт","Без лифта"]}]},
- {t:"Уборка",s:["Генеральная уборка","Поддерживающая уборка","Уборка после ремонта","Мойка окон","Химчистка мебели","Химчистка ковров"],q:[{n:"Помещение",o:["Квартира","Дом","Офис"]},{n:"Площадь",o:["до 40 м²","40–70 м²","70–100 м²","больше 100 м²"]},{n:"Средства и инвентарь",o:["У мастера","Есть свои"]}]},
- {t:"Красота и здоровье",s:["Маникюр","Педикюр","Парикмахер","Массаж","Визажист","Наращивание ресниц","Брови"],q:[{n:"Где",o:["У мастера","На дому"]},{n:"Для кого",o:["Для женщины","Для мужчины","Для ребёнка"]}]},
- {t:"Репетиторы",s:["Репетитор по математике","Репетитор по английскому","Репетитор по русскому","Репетитор по белорусскому","Репетитор по физике","Репетитор по химии","Подготовка к ЦЭ","Начальные классы"],q:[{n:"Кто учится",o:["Школьник","Студент","Взрослый"]},{n:"Цель",o:["Школьная программа","Подготовка к ЦЭ/ЦТ","Олимпиада","Для себя или работы"]},{n:"Формат",o:["Онлайн","У ученика","У репетитора"]}]},
- {t:"Авто",s:["Автоэлектрик","Шиномонтаж","Диагностика авто","Ремонт двигателя","Ремонт кузова","Помощь на дороге"],q:[{n:"Марка авто",o:["Volkswagen","Renault","Toyota","Audi","BMW","Mercedes","Другая"]},{n:"Где",o:["Выезд мастера","В сервисе"]}]},
- {t:"Праздники и съёмка",s:["Фотограф","Видеограф","Ведущий","Аниматор","DJ","Оформление шарами"],q:[{n:"Событие",o:["День рождения","Свадьба","Корпоратив","Детский праздник","Другое"]},{n:"Гостей",o:["до 10","10–30","30–100","больше 100"]}]},
- {t:"Перевозки и грузчики",s:["Грузчики","Грузоперевозка","Переезд","Вывоз мусора"],q:[{n:"Объём",o:["Несколько вещей","Комната","Квартира","Офис"]},{n:"Этаж и лифт",o:["1 этаж или частный дом","Есть лифт","Без лифта"]}]},
- {t:"Дом и семья",s:["Няня","Сиделка","Домработница","Выгул собак","Психолог"],q:[{n:"Как часто",o:["Разово","Несколько раз в неделю","Каждый день"]}]}
-];
+const WCATS=DCAT.flatMap(sec=>sec.c.map(c=>({t:c.t,sec:sec.t,s:c.s.map(x=>x.t),q:sec.q,v:Object.fromEntries(c.s.filter(x=>x.v).map(x=>[x.t,x.v]))})));
+const SVCCAT={};WCATS.forEach(c=>c.s.forEach(x=>SVCCAT[x]=c.t));
+const sameCat=(ms,x)=>(ms||[]).includes(x)||(!!SVCCAT[x]&&(ms||[]).some(y=>SVCCAT[y]===SVCCAT[x]));
 SERVICES=[...new Set([...WCATS.flatMap(c=>c.s),...SERVICES])];
 let W=null;
 const WKEY="desilvo-draft";
@@ -439,7 +431,7 @@ function vNew(pre){
   drawNew();
 }
 const ALLSVC=()=>WCATS.flatMap(c=>c.s.map(s=>({s,c:c.t})));
-function wSteps(){const c=WCATS.find(x=>x.t===W.cat);return ["svc",...(c?c.q.map((q,i)=>"q"+i):[]),"desc","where","when","budget","contacts"];}
+function wSteps(){const c=WCATS.find(x=>x.t===W.cat);return ["svc",...(c&&c.v[W.svc]?["var"]:[]),...(c?c.q.map((q,i)=>"q"+i):[]),"desc","where","when","budget","contacts"];}
 function drawNew(){
   const p=profile||{};const c=WCATS.find(x=>x.t===W.cat);const steps=wSteps();
   if(W.step>=steps.length)W.step=steps.length-1;
@@ -447,10 +439,14 @@ function drawNew(){
   const chip=(attr,val,on,txt)=>'<button type="button" class="tag'+(on?' on':'')+'" '+attr+'="'+esc(val)+'">'+esc(txt||val)+'</button>';
   let body="",title="",hint="";
   if(st==="svc"){
-    title="Выберите услугу";
+    title="Выберите услугу";const cs=W.sec||(c&&c.sec)||null;
     body='<div style="position:relative"><input id="wsvc" autocomplete="off" value="'+esc(W.svc)+'" placeholder="Что нужно выполнить? Какой специалист нужен?"><div id="wsug" class="card" style="position:absolute;left:0;right:0;top:100%;z-index:5;padding:6px;margin-top:4px;display:none"></div></div>'
-      +'<div class="small muted" style="margin:14px 0 6px">Или выберите из категорий:</div><div class="tags">'+WCATS.map(x=>chip("data-wc",x.t,x.t===W.cat)).join("")+'</div>'
-      +(c?'<div class="tags" style="margin-top:8px">'+c.s.map(s=>chip("data-ws",s,s===W.svc)).join("")+'</div>':"");
+      +'<div class="small muted" style="margin:14px 0 6px">Или выберите из каталога:</div><div class="tags">'+DCAT.map(x=>chip("data-wsec",x.t,x.t===cs)).join("")+'</div>'
+      +(cs?'<div class="small muted" style="margin:12px 0 6px">'+esc(cs)+'</div><div class="tags">'+WCATS.filter(x=>x.sec===cs).map(x=>chip("data-wc",x.t,x.t===W.cat)).join("")+'</div>':"")
+      +(c?'<div class="small muted" style="margin:12px 0 6px">'+esc(c.t)+'</div><div class="tags">'+c.s.map(s=>chip("data-ws",s,s===W.svc)).join("")+'</div>':"");
+  } else if(st==="var"){
+    const vs=c.v[W.svc];title="Что именно нужно?";hint="Можно выбрать несколько вариантов.";
+    body='<div class="tags">'+vs.map(o=>chip("data-wv",o,(W.ans["Что именно"]||[]).includes(o))).join("")+'</div>';
   } else if(st[0]==="q"){
     const qi=+st.slice(1),q=c.q[qi];title=q.n+"?";hint=q.m?"Можно выбрать несколько вариантов.":"";
     body='<div class="tags">'+q.o.map(o=>chip("data-wq",qi+"|"+o,(W.ans[q.n]||[]).includes(o),o)).join("")+'</div><label style="margin-top:12px">Другой вариант<input id="wother" value="'+esc(W.other[q.n]||"")+'" placeholder="Если нет подходящего — напишите своими словами"></label>';
@@ -480,7 +476,9 @@ function drawNew(){
     if(g("wother")&&c){const q=c.q[+st.slice(1)];W.other[q.n]=g("wother").value;}wSave();};
   const err=m=>{const e=$("#werr");e.textContent=m;e.hidden=false;};
   V.querySelectorAll("[data-wc]").forEach(b=>b.onclick=()=>{keep();W.cat=b.dataset.wc;W.ans={};W.other={};if(!WCATS.find(x=>x.t===W.cat).s.includes(W.svc))W.svc="";drawNew();});
-  V.querySelectorAll("[data-ws]").forEach(b=>b.onclick=()=>{keep();W.svc=b.dataset.ws;W.step=1;wSave();drawNew();});
+  V.querySelectorAll("[data-wsec]").forEach(b=>b.onclick=()=>{keep();W.sec=b.dataset.wsec;if(c&&c.sec!==W.sec){W.cat=null;W.svc="";W.ans={};W.other={};}drawNew();});
+  V.querySelectorAll("[data-wv]").forEach(b=>b.onclick=()=>{keep();const o=b.dataset.wv;let a=W.ans["Что именно"]||[];a=a.includes(o)?a.filter(x=>x!==o):[...a,o];W.ans["Что именно"]=a;wSave();drawNew();});
+  V.querySelectorAll("[data-ws]").forEach(b=>b.onclick=()=>{keep();if(W.svc!==b.dataset.ws)delete W.ans["Что именно"];W.svc=b.dataset.ws;W.step=1;wSave();drawNew();});
   V.querySelectorAll("[data-wq]").forEach(b=>b.onclick=()=>{keep();const i=b.dataset.wq.indexOf("|"),qi=+b.dataset.wq.slice(0,i),o=b.dataset.wq.slice(i+1);const q=c.q[qi];let a=W.ans[q.n]||[];a=a.includes(o)?a.filter(x=>x!==o):(q.m?[...a,o]:[o]);W.ans[q.n]=a;wSave();if(!q.m&&a.length){W.step++;}drawNew();});
   V.querySelectorAll("[data-wday]").forEach(b=>b.onclick=()=>{keep();W.day=b.dataset.wday||null;drawNew();});
   V.querySelectorAll("[data-wt]").forEach(b=>b.onclick=()=>{keep();W.slot=b.dataset.wt;drawNew();});
@@ -517,7 +515,7 @@ function drawReg(){
   let h='<h1>Регистрация исполнителя</h1><div class="tabs">'+steps.map((s,i)=>'<button type="button" class="'+(RG.step===i+1?"on":"")+'" data-rs="'+(i+1)+'">'+(i+1)+'. '+s+'</button>').join("")+'</div><div class="card">';
   if(RG.step===1)h+='<h2>Персональные данные</h2><label>Фамилия, имя, отчество<input id="rfio" value="'+esc(RG.fio)+'" placeholder="Кириллицей, как в паспорте"></label><label>Телефон<input id="rph" type="tel" value="'+esc(RG.phone)+'" placeholder="+375 (__) ___-__-__"></label><p class="small muted">Клиенты увидят имя и первую букву фамилии. Телефон получит только клиент, который выберет вас.</p>';
   if(RG.step===2)h+='<h2>Налоговый статус</h2><p class="small muted">Подтверждение статуса защищает клиентов и сервис от мошенников. УНП клиентам не показывается.</p><div class="grid" style="grid-template-columns:1fr">'+Object.keys(TAX).map(k=>'<label class="item" style="cursor:pointer;display:flex;gap:10px;align-items:flex-start;font-weight:600"><input type="radio" name="rtax" value="'+k+'" style="width:auto;margin-top:4px"'+(RG.tax===k?' checked':'')+'><span>'+TAX[k]+'<br><span class="small muted" style="font-weight:500">'+(k==="none"?'В анкете будет написано: «Специалист не предъявил номер налогоплательщика».':'В анкете будет отметка «'+TAX[k]+'».')+'</span></span></label>').join("")+'</div>'+(RG.tax!=="none"?'<label>УНП (9 цифр)<input id="runp" inputmode="numeric" maxlength="9" value="'+esc(RG.unp)+'"></label>':'');
-  if(RG.step===3){const c=WCATS.find(x=>x.t===RG.cat);h+='<h2>Чем вы занимаетесь?</h2><p class="small muted">Выберите услуги — будем предлагать подходящие заявки. Лучше выбрать одну сферу: так анкета выглядит профессиональнее.</p><div class="tags">'+WCATS.map(x=>'<button type="button" class="tag'+(x.t===RG.cat?' on':'')+'" data-rc="'+esc(x.t)+'">'+esc(x.t)+'</button>').join("")+'</div><div class="tags">'+c.s.map(s=>'<button type="button" class="tag'+(RG.services.includes(s)?' on':'')+'" data-rv="'+esc(s)+'">'+(RG.services.includes(s)?'✓ ':'+ ')+esc(s)+'</button>').join("")+'</div><label>Другая услуга<div class="acts"><input id="rother" placeholder="Например, ремонт кофемашин" style="flex:1"><button type="button" class="btn s sm" id="raddsvc">Добавить</button></div></label>'+(RG.services.length?'<div class="small"><b>Выбрано:</b> '+RG.services.map(esc).join(", ")+'</div>':'');}
+  if(RG.step===3){const c=WCATS.find(x=>x.t===RG.cat);const rs=RG.sec||c.sec;h+='<h2>Чем вы занимаетесь?</h2><p class="small muted">Выберите услуги — будем предлагать подходящие заявки. Лучше выбрать одну сферу: так анкета выглядит профессиональнее.</p><div class="tags">'+DCAT.map(x=>'<button type="button" class="tag'+(x.t===rs?' on':'')+'" data-rsec="'+esc(x.t)+'">'+esc(x.t)+'</button>').join("")+'</div><div class="tags">'+WCATS.filter(x=>x.sec===rs).map(x=>'<button type="button" class="tag'+(x.t===RG.cat?' on':'')+'" data-rc="'+esc(x.t)+'">'+esc(x.t)+'</button>').join("")+'</div><div class="tags">'+c.s.map(s=>'<button type="button" class="tag'+(RG.services.includes(s)?' on':'')+'" data-rv="'+esc(s)+'">'+(RG.services.includes(s)?'✓ ':'+ ')+esc(s)+'</button>').join("")+'</div><label>Другая услуга<div class="acts"><input id="rother" placeholder="Например, ремонт кофемашин" style="flex:1"><button type="button" class="btn s sm" id="raddsvc">Добавить</button></div></label>'+(RG.services.length?'<div class="small"><b>Выбрано:</b> '+RG.services.map(esc).join(", ")+'</div>':'');}
   if(RG.step===4)h+='<h2>Где оказываете услуги?</h2><label>Города, куда выезжаете к клиенту</label>'+checks("rcty",CITIES,RG.cities)+'<label>Районы выезда<input id="rdist" value="'+esc(RG.districts)+'" placeholder="Через запятую, например: Советский, Новобелицкий"></label><label>Работаю по адресу<input id="raddr" value="'+esc(RG.addr)+'" placeholder="Город и улица мастерской или салона. Если работаете онлайн — откуда вы"></label>';
   if(RG.step===5)h+='<h2>Ваше фото</h2><p class="small muted">Профили с фото выбирают намного чаще. Рекомендации: улыбка, нейтральный фон, хорошее освещение, без логотипов, контактов и других людей. Только ваше настоящее фото.</p><div class="acts">'+(RG.photo?'<img src="'+esc(RG.photo)+'" alt="" style="width:120px;height:120px;object-fit:cover;border-radius:50%">':'<div class="add" style="width:120px">нет фото</div>')+'<label class="btn s sm" style="display:inline-flex">'+(RG.photo?'Заменить фото':'Загрузить фото')+'<input type="file" id="rphoto" accept="image/*" hidden></label></div><label style="display:flex;gap:8px;align-items:flex-start;font-weight:500"><input type="checkbox" id="ragree" style="width:auto;margin-top:4px"> Принимаю условия работы с сервисом и согласен на обработку персональных данных</label>';
   h+='<div class="acts" style="justify-content:space-between">'+(RG.step>1?'<button type="button" class="btn s" id="rprev">Назад</button>':'<span></span>')+(RG.step<5?'<button type="button" class="btn" id="rnext">Продолжить</button>':'<button type="button" class="btn" id="rdone">Отправить анкету на проверку</button>')+'</div></div>';
@@ -527,6 +525,7 @@ function drawReg(){
   V.querySelectorAll("[data-rs]").forEach(b=>b.onclick=()=>{keep();const to=+b.dataset.rs;if(to>RG.step){const e=check();if(e)return fail({message:e});}RG.step=Math.min(to,RG.step+1);drawReg();});
   V.querySelectorAll('input[name="rtax"]').forEach(i=>i.onchange=()=>{keep();drawReg();});
   V.querySelectorAll("[data-rc]").forEach(b=>b.onclick=()=>{RG.cat=b.dataset.rc;drawReg();});
+  V.querySelectorAll("[data-rsec]").forEach(b=>b.onclick=()=>{RG.sec=b.dataset.rsec;RG.cat=WCATS.find(x=>x.sec===RG.sec).t;drawReg();});
   V.querySelectorAll("[data-rv]").forEach(b=>b.onclick=()=>{const s=b.dataset.rv;RG.services=RG.services.includes(s)?RG.services.filter(x=>x!==s):[...RG.services,s];drawReg();});
   $("#raddsvc")&&($("#raddsvc").onclick=()=>{const v=$("#rother").value.trim();if(v&&!RG.services.includes(v))RG.services.push(v);drawReg();});
   $("#rphoto")&&($("#rphoto").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const blob=await shrink(f);const path=uid()+"/avatar-"+Date.now()+".jpg";const {error}=await sb.storage.from("works").upload(path,blob,{contentType:"image/jpeg"});if(error)throw error;RG.photo=sb.storage.from("works").getPublicUrl(path).data.publicUrl;drawReg();}catch(x){fail(x);}});
