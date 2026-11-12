@@ -1,0 +1,39 @@
+{
+  "name": "desilvo — мастера по всей Беларуси",
+  "short_name": "desilvo",
+  "description": "Найдите мастера или заказы рядом",
+  "lang": "ru",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4BAE2F",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Создать задание",
+      "url": "/app.html#new"
+    },
+    {
+      "name": "Найти задания",
+      "url": "/app.html#tasks"
+    },
+    {
+      "name": "Мастера",
+      "url": "/app.html#masters"
+    }
+  ]
+}
