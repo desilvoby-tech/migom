@@ -196,18 +196,34 @@ function masterForm(m){
   +'<label>О себе<textarea name="ab" placeholder="Чем занимаетесь, инструмент, гарантия">'+esc(m.about)+'</textarea></label>'
   +(master?photosBlock():'')+'<p class="small muted">Укажите телефон в блоке «Ваши данные» выше — по нему мы свяжемся для проверки.</p><div class="acts"><button class="btn sm">'+(master?"Сохранить анкету":"Отправить на проверку")+'</button><span id="mok" class="small muted"></span></div></form>';
 }
-const MMENU=[["feed","Новые"],["jobs","Мои заказы"],["offers","Мои отклики"],["msgs","Сообщения"],["form","Анкета"],["pay","Оплата"],["revs","Отзывы"],["stat","Статистика"],["help","Поддержка"]];
+const MMENU=[["feed","Новые"],["jobs","Мои заказы"],["offers","Мои отклики"],["msgs","Сообщения"],["form","Анкета"],["set","Настройки"],["pay","Оплата"],["revs","Отзывы"],["stat","Статистика"],["help","Поддержка"]];
 function tMaster(){
   const T=$("#tab");
   if(!master){T.innerHTML='<div class="card"><h2>Станьте исполнителем</h2><p class="muted">Заполните анкету за 5 шагов: данные, налоговый статус, услуги, где работаете, фото. После проверки вы начнёте получать заявки.</p><div><a class="btn" href="#reg">Начать регистрацию</a></div></div>';return;}
   const ok=master.approved&&!master.blocked;
   let h='<div class="card mhead"><div class="top"><h2>'+esc(master.name)+'</h2>'+(master.blocked?'<span class="chip r">Заблокирован</span>':master.approved?'<span class="chip g">Анкета одобрена</span>':'<span class="chip w">На проверке</span>')+'</div><div class="small">'+rateLine(master)+' · <span id="mdue"></span></div><div>'+badges(master)+'</div>'+(master.approved?'<a class="small" href="#m-'+master.id+'">Открыть публичный профиль</a>':'<p class="muted small">Пока анкета на проверке, новые заявки не видны. Мы позвоним по номеру из «Ваших данных».</p>')+'</div>';
   if(!ok&&!["form","help"].includes(mTab))mTab="form";
-  h+='<div class="mlay"><nav class="mnav">'+MMENU.filter(([k])=>ok||["form","help"].includes(k)).map(([k,t])=>'<button data-mt="'+k+'" class="'+(mTab===k?"on":"")+'">'+t+'</button>').join("")+'</nav><div id="mt"></div></div>';
+  h+='<div class="mlay"><nav class="mnav">'+MMENU.filter(([k])=>ok||["form","help"].includes(k)).map(([k,t])=>'<button data-mt="'+k+'" class="'+(mTab===k?"on":"")+'">'+t+'</button>').join("")+'</nav><div id="mt"></div></div><datalist id="mtpl"></datalist>';
   T.innerHTML=h;
   T.querySelectorAll("[data-mt]").forEach(b=>b.onclick=()=>{mTab=b.dataset.mt;tMaster();});
   sb.from("requests").select("commission,commission_paid,status").eq("master_id",uid()).then(({data})=>{const due=(data||[]).filter(r=>r.status==="done"&&!r.commission_paid).reduce((a,r)=>a+(+r.commission||0),0);const e=$("#mdue");if(e)e.innerHTML='Комиссия к оплате: <b>'+due.toFixed(2)+' BYN</b>';});
-  ({feed:tFeed,jobs:tJobs,offers:tOffers,revs:tRevs,form:profileEditor,pay:tPay,msgs:tMsgs,stat:tStat,help:tHelp}[mTab]||tFeed)();
+  loadMset().then(()=>{const dl=$("#mtpl");if(dl)dl.innerHTML=(MSET.templates||[]).map(t=>'<option value="'+esc(t)+'">').join("");});
+  ({feed:tFeed,jobs:tJobs,offers:tOffers,revs:tRevs,form:profileEditor,set:tSet,pay:tPay,msgs:tMsgs,stat:tStat,help:tHelp}[mTab]||tFeed)();
+}
+let MSET=null;
+async function loadMset(){if(MSET)return MSET;const {data}=await sb.from("master_settings").select("*").eq("id",uid()).maybeSingle();MSET=data||{id:uid(),paused:false,notify_new:true,notify_chat:true,notify_reviews:true,templates:[]};return MSET;}
+async function saveMset(patch){Object.assign(MSET,patch);const {error}=await sb.from("master_settings").upsert({id:uid(),paused:MSET.paused,notify_new:MSET.notify_new,notify_chat:MSET.notify_chat,notify_reviews:MSET.notify_reviews,templates:MSET.templates,updated_at:new Date().toISOString()});if(error)fail(error);}
+async function tSet(){
+  const T=$("#mt");T.innerHTML='<div class="empty">Загрузка…</div>';await loadMset();const m=MSET;
+  const sw=(k,t,d)=>'<label class="small" style="display:flex;gap:10px;align-items:flex-start;cursor:pointer"><input type="checkbox" data-ms="'+k+'" '+(m[k]?"checked":"")+' style="width:auto;margin-top:3px"><span><b>'+t+'</b>'+(d?'<br><span class="muted">'+d+'</span>':'')+'</span></label>';
+  T.innerHTML='<div class="card"><h2>Приём заявок</h2>'+sw("paused","Временно не брать заявки","Новые заявки не будут приходить в Telegram. Анкета остаётся в каталоге.")+'</div>'
+   +'<div class="card"><h2>Уведомления в Telegram</h2>'+(master.telegram_chat_id?'<p class="small">Telegram подключён ✓</p>':'<p class="small">Telegram не подключён. <a href="https://t.me/desilvo_bot?start=master" target="_blank" rel="noopener">Подключить @desilvo_bot</a></p>')
+   +sw("notify_new","Новые заявки по моим услугам и городам")+sw("notify_chat","Сообщения от клиентов")+sw("notify_reviews","Новые отзывы")+'</div>'
+   +'<div class="card"><h2>Шаблоны сообщений</h2><p class="small muted">Сохраните частые ответы об услуге, цене и сроках — они подставляются в поле «Комментарий клиенту» при отклике.</p><div id="tpl">'+(m.templates||[]).map((t,i)=>'<div class="top" style="gap:8px"><span class="small" style="flex:1">'+esc(t)+'</span><button class="btn s sm" data-tdel="'+i+'">Удалить</button></div>').join("")+'</div><form id="tpf" class="acts"><input name="t" maxlength="300" placeholder="Например: Выезд по Гомелю бесплатно, диагностика 0 р." style="flex:1"><button class="btn sm">Добавить</button></form></div>'
+   +'<div class="card"><h2>Аккаунт</h2><p class="small">Сменить ФИО или удалить аккаунт можно через администратора: напишите в <a href="https://t.me/desilvo_bot" target="_blank" rel="noopener">@desilvo_bot</a> или позвоните +375 (25) 616-01-36. ФИО меняется после проверки документов.</p></div>';
+  T.querySelectorAll("[data-ms]").forEach(c=>c.onchange=()=>saveMset({[c.dataset.ms]:c.checked}));
+  T.querySelectorAll("[data-tdel]").forEach(b=>b.onclick=async()=>{const t=[...MSET.templates];t.splice(+b.dataset.tdel,1);await saveMset({templates:t});tSet();});
+  $("#tpf").onsubmit=async e=>{e.preventDefault();const v=e.target.t.value.trim();if(!v)return;if((MSET.templates||[]).length>=10)return fail({message:"Не больше 10 шаблонов"});await saveMset({templates:[...(MSET.templates||[]),v]});tSet();};
 }
 async function tPay(){
   const T=$("#mt");T.innerHTML='<div class="empty">Загрузка…</div>';
@@ -265,7 +281,7 @@ async function tFeedOld(){
   const list=data.filter(r=>!onlyMine||(master.cities.includes(r.city)&&(master.services.includes(r.service)||!SERVICES.includes(r.service))));
   T.innerHTML='<label class="small" style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" id="om" style="width:auto"'+(onlyMine?' checked':'')+'> Только мои города и услуги</label>'
   +(list.length?list.map(r=>'<div class="card"><div class="top"><h2>'+esc(r.service)+'</h2><span class="muted small">'+dt(r.created_at)+'</span></div><div class="muted small">'+esc(r.city)+(r.when_text?' · '+esc(r.when_text):'')+' · откликов: '+r.offers_count+'</div>'+bd(r)+(r.description?'<div>'+esc(r.description)+'</div>':'')
-    +(mine.has(r.id)?'<div class="acts"><span class="chip g">Вы откликнулись</span><button class="btn s sm" data-chat="'+r.id+'|'+uid()+'|Клиент">Чат с клиентом</button></div>':'<form class="acts" data-of="'+r.id+'"><input name="pr" placeholder="Цена, например «от 40 р.»" style="flex:1;min-width:160px"><input name="ms" placeholder="Комментарий клиенту" style="flex:2;min-width:200px"><button class="btn sm">Готов выполнить</button></form>')+'</div>').join(""):'<div class="empty">Подходящих заявок сейчас нет.</div>');
+    +(mine.has(r.id)?'<div class="acts"><span class="chip g">Вы откликнулись</span><button class="btn s sm" data-chat="'+r.id+'|'+uid()+'|Клиент">Чат с клиентом</button></div>':'<form class="acts" data-of="'+r.id+'"><input name="pr" placeholder="Цена, например «от 40 р.»" style="flex:1;min-width:160px"><input name="ms" list="mtpl" placeholder="Комментарий клиенту (шаблоны — в «Настройках»)" style="flex:2;min-width:200px"><button class="btn sm">Готов выполнить</button></form>')+'</div>').join(""):'<div class="empty">Подходящих заявок сейчас нет.</div>');
   $("#om").onchange=e=>{onlyMine=e.target.checked;tFeed();};
   T.querySelectorAll("[data-of]").forEach(f=>f.onsubmit=async e=>{e.preventDefault();const {error}=await sb.from("offers").insert({request_id:+f.dataset.of,price:f.pr.value.trim()||null,message:f.ms.value.trim()||null});if(error)return fail(error);tFeed();});
 }
