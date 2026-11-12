@@ -2,6 +2,8 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://cnrvmcwvxpwdxduwifed.supabase.co wss://cnrvmcwvxpwdxduwifed.supabase.co https://formsubmit.co; media-src 'self' blob: https:; object-src 'none'; base-uri 'self'; form-action 'self' https://cnrvmcwvxpwdxduwifed.supabase.co; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>desilvo — найти мастера в Беларуси: ремонт, услуги, цены и отзывы</title>
 <link rel="canonical" href="https://desilvo.by/">
@@ -197,9 +199,10 @@ footer{border-top:1px solid var(--line);padding-block:36px;color:var(--muted);fo
 <input type="radio" name="when" id="w3" value="На этой неделе"><label for="w3">На этой неделе</label>
 <input type="radio" name="when" id="w4" value="Не срочно"><label for="w4">Не срочно</label></div></div>
 <div class="row"><div class="field"><label for="o-name">Имя</label><input id="o-name" autocomplete="given-name" placeholder="Как к вам обращаться"></div><div class="field"><label for="o-phone">Телефон</label><input id="o-phone" type="tel" autocomplete="tel" placeholder="+375 (__) ___-__-__" required></div></div>
+<label class="fine" style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="o-agree" style="width:auto;margin-top:3px;flex:none"> <span>Даю согласие на обработку персональных данных для подбора мастера в соответствии с <a href="/politika" target="_blank">Политикой обработки персональных данных</a></span></label><input type="text" id="o-hp" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
 <p class="err" id="o-err" hidden></p>
 <button class="btn" type="submit" id="o-btn">Опубликовать задание</button>
-<p class="fine">Нажимая кнопку, вы соглашаетесь на обработку контактных данных для подбора мастера.</p>
+
 </form></div>
 </div></section>
 <section id="pros"><div class="wrap"><div class="pros">
@@ -226,7 +229,7 @@ footer{border-top:1px solid var(--line);padding-block:36px;color:var(--muted);fo
 <div><h3>Популярное</h3><ul><li><a href="/uslugi/remont-telefona-minsk">Ремонт телефона в Минске</a></li><li><a href="/uslugi/remont-telefona-gomel">Ремонт телефона в Гомеле</a></li><li><a href="/uslugi/elektrik-minsk">Электрик в Минске</a></li><li><a href="/uslugi/santehnik-gomel">Сантехник в Гомеле</a></li><li><a href="/uslugi/remont-kompyutera-gomel">Ремонт компьютера в Гомеле</a></li></ul></div>
 <div><h3>Контакты</h3><ul><li style="user-select:all">+375 (25) 616-01-36</li><li style="user-select:all">info@desilvo.by</li><li>Ежедневно 8:00–21:00</li><li>Вся Беларусь</li></ul></div>
 </div>
-<p style="margin-top:24px;font-size:.82rem">© 2026 desilvo</p>
+<p style="margin-top:24px;font-size:.82rem">© 2026 desilvo · <a href="/politika">Политика обработки персональных данных</a></p>
 </div></footer>
 <script src="config.js"></script>
 <script src="cats.js"></script>
@@ -309,17 +312,34 @@ async function save(rec){
   try{const r=await fetch(FORM_URL,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({_subject:"Новая заявка: "+rec.svc,_template:"table",_captcha:"false",...rec})});const j=await r.json().catch(()=>({}));if(!r.ok||String(j.success)==="false")throw new Error("send");ok=true;}catch(e){if(!ok)throw e;}
 }
 function fail(el,msg){el.textContent=msg;el.hidden=false;}
+window.__oT=Date.now();
 $("#orderForm").addEventListener("submit",async e=>{
   e.preventDefault(); const err=$("#o-err"); err.hidden=true;
   const rec={svc:$("#o-svc").value.trim(),desc:$("#o-desc").value.trim(),area:$("#o-area").value,addr:$("#o-addr").value.trim(),when:document.querySelector('input[name="when"]:checked').value,name:$("#o-name").value.trim(),phone:$("#o-phone").value.trim(),budget:$("#o-budget").value?Math.round(+$("#o-budget").value):null,deadline:$("#o-deadline").value||null};
   if(!rec.svc) return fail(err,"Напишите, что нужно сделать.");
   if(!phoneOk(rec.phone)) return fail(err,"Проверьте номер телефона: в нём должно быть не меньше 9 цифр.");
+  if(!$("#o-agree").checked) return fail(err,"Отметьте согласие на обработку персональных данных.");
+  if($("#o-hp").value||Date.now()-(window.__oT||0)<3000) return fail(err,"Проверка не пройдена. Попробуйте ещё раз через несколько секунд.");
+  try{const now=Date.now(),a=JSON.parse(localStorage.getItem("bg_order")||"[]").filter(t=>now-t<3600e3);if(a.length>=5)return fail(err,"Слишком много заданий за час. Попробуйте позже.");a.push(now);localStorage.setItem("bg_order",JSON.stringify(a))}catch(_){}
   const b=$("#o-btn"); b.disabled=true; b.textContent="Публикуем…";
   try{ await save(rec);
     $("#orderBox").innerHTML='<div class="done"><span class="big">Задание опубликовано</span><p>«'+esc(rec.svc)+'», '+esc(rec.area)+'. Мастера откликнутся со своими ценами, а выбранный мастер позвонит по номеру '+esc(rec.phone)+'.</p><p><a href="app.html#me">Открыть кабинет</a>, чтобы видеть отклики и переписываться.</p><button class="btn ghost" type="button" onclick="location.reload()">Новое задание</button></div>';
     loadFeed();
   }catch(x){ b.disabled=false; b.textContent="Опубликовать задание"; fail(err,"Задание не отправилось. Позвоните нам: +375 (25) 616-01-36."); }
 });
+</script>
+<script>
+/* Реквизиты и cookie-баннер (12.11.2026) */
+(function(){
+var REQ="ИП Купцов Д. И., УНП 491544930. 246003, г. Гомель, ул. Рогачёвская, 13, офис 2. ";
+function add(){var f=document.querySelector("footer");var r=document.createElement("div");r.className="site-req";r.style.cssText="font-size:12px;opacity:.75;margin-top:8px;padding:0 16px 8px;text-align:inherit";r.innerHTML=REQ+'<a href="/politika">Политика обработки персональных данных</a>';if(f){(f.querySelector(".wrap")||f).appendChild(r)}else{r.style.cssText+=";text-align:center;padding:24px 16px";document.body.appendChild(r)}
+try{if(localStorage.getItem("ck_ok"))return}catch(_){}
+var d=document.createElement("div");d.className="ckb";d.setAttribute("role","region");d.setAttribute("aria-label","Уведомление о cookie");
+d.innerHTML='<p>Мы используем cookie и локальное хранилище браузера только для работы сайта: вход в аккаунт, черновики и настройки. Аналитику и рекламные cookie не используем. Подробнее — в <a href="/politika">Политике обработки персональных данных</a>.</p><button type="button">Понятно</button>';
+d.querySelector("button").onclick=function(){try{localStorage.setItem("ck_ok",String(Date.now()))}catch(_){}d.remove()};
+var st=document.createElement("style");st.textContent=".ckb{position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;max-width:760px;margin:0 auto;background:#141B2D;color:#eef2f7;border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.25);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.ckb p{margin:0;flex:1}.ckb a{color:#9BE07E}.ckb button{flex:none;border:0;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer;background:#4BAE2F;color:#fff}@media(max-width:560px){.ckb{flex-direction:column;align-items:stretch}}";
+document.head.appendChild(st);document.body.appendChild(d)}
+if(document.body)add();else document.addEventListener("DOMContentLoaded",add)})();
 </script>
 </body>
 </html>

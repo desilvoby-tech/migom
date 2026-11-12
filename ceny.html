@@ -1,4 +1,6 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html><html lang="ru"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://cnrvmcwvxpwdxduwifed.supabase.co wss://cnrvmcwvxpwdxduwifed.supabase.co https://formsubmit.co; media-src 'self' blob: https:; object-src 'none'; base-uri 'self'; form-action 'self' https://cnrvmcwvxpwdxduwifed.supabase.co; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Цены на услуги мастеров в Беларуси — расценки от и до | desilvo</title>
 <meta name="description" content="Расценки мастеров desilvo: цены от и до на ремонт техники, услуги электрика и сантехника, уборку, сборку мебели, красоту, репетиторов и другие услуги по всей Беларуси.">
 <link rel="canonical" href="https://desilvo.by/ceny"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -27,4 +29,17 @@ function draw(ms){
 if(!window.MIGOM){draw([]);return;}
 fetch(MIGOM.url+"/rest/v1/masters?select=services,prices,price_from&approved=eq.true&blocked=eq.false&is_demo=eq.false&limit=1000",{headers:{apikey:MIGOM.key,Authorization:"Bearer "+MIGOM.key}}).then(function(r){return r.ok?r.json():[]}).then(draw).catch(function(){draw([])});
 })();
-</script></body></html>
+</script><script>
+/* Реквизиты и cookie-баннер (12.11.2026) */
+(function(){
+var REQ="ИП Купцов Д. И., УНП 491544930. 246003, г. Гомель, ул. Рогачёвская, 13, офис 2. ";
+function add(){var f=document.querySelector("footer");var r=document.createElement("div");r.className="site-req";r.style.cssText="font-size:12px;opacity:.75;margin-top:8px;padding:0 16px 8px;text-align:inherit";r.innerHTML=REQ+'<a href="/politika">Политика обработки персональных данных</a>';if(f){(f.querySelector(".wrap")||f).appendChild(r)}else{r.style.cssText+=";text-align:center;padding:24px 16px";document.body.appendChild(r)}
+try{if(localStorage.getItem("ck_ok"))return}catch(_){}
+var d=document.createElement("div");d.className="ckb";d.setAttribute("role","region");d.setAttribute("aria-label","Уведомление о cookie");
+d.innerHTML='<p>Мы используем cookie и локальное хранилище браузера только для работы сайта: вход в аккаунт, черновики и настройки. Аналитику и рекламные cookie не используем. Подробнее — в <a href="/politika">Политике обработки персональных данных</a>.</p><button type="button">Понятно</button>';
+d.querySelector("button").onclick=function(){try{localStorage.setItem("ck_ok",String(Date.now()))}catch(_){}d.remove()};
+var st=document.createElement("style");st.textContent=".ckb{position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;max-width:760px;margin:0 auto;background:#141B2D;color:#eef2f7;border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.25);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.ckb p{margin:0;flex:1}.ckb a{color:#9BE07E}.ckb button{flex:none;border:0;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer;background:#4BAE2F;color:#fff}@media(max-width:560px){.ckb{flex-direction:column;align-items:stretch}}";
+document.head.appendChild(st);document.body.appendChild(d)}
+if(document.body)add();else document.addEventListener("DOMContentLoaded",add)})();
+</script>
+</body></html>
