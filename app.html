@@ -66,6 +66,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal)}
 .tag:hover{border-color:var(--spark)}
 .tag.on{background:var(--spark);border-color:var(--spark);color:#fff}
 .wsg:hover{background:var(--line)}
+.mlay{display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start;margin-top:16px}.mnav{display:grid;gap:4px;position:sticky;top:12px}.mnav button{text-align:left;background:none;border:0;padding:10px 12px;border-radius:10px;font:600 .95rem var(--body);color:var(--fg);cursor:pointer}.mnav button:hover{background:var(--line)}.mnav button.on{background:var(--spark);color:#fff}#mt{display:grid;gap:12px;min-width:0}@media(max-width:760px){.mlay{grid-template-columns:1fr}.mnav{display:flex;overflow-x:auto;position:static}.mnav button{white-space:nowrap}}
 .add{display:grid;place-items:center;aspect-ratio:1;border:1.5px dashed var(--line);border-radius:10px;cursor:pointer;font-weight:700;color:var(--muted)}
 </style>
 </head>
@@ -195,16 +196,53 @@ function masterForm(m){
   +'<label>О себе<textarea name="ab" placeholder="Чем занимаетесь, инструмент, гарантия">'+esc(m.about)+'</textarea></label>'
   +(master?photosBlock():'')+'<p class="small muted">Укажите телефон в блоке «Ваши данные» выше — по нему мы свяжемся для проверки.</p><div class="acts"><button class="btn sm">'+(master?"Сохранить анкету":"Отправить на проверку")+'</button><span id="mok" class="small muted"></span></div></form>';
 }
-async function tMaster(){
+const MMENU=[["feed","Новые"],["jobs","Мои заказы"],["offers","Мои отклики"],["msgs","Сообщения"],["form","Анкета"],["pay","Оплата"],["revs","Отзывы"],["stat","Статистика"],["help","Поддержка"]];
+function tMaster(){
   const T=$("#tab");
   if(!master){T.innerHTML='<div class="card"><h2>Станьте исполнителем</h2><p class="muted">Заполните анкету за 5 шагов: данные, налоговый статус, услуги, где работаете, фото. После проверки вы начнёте получать заявки.</p><div><a class="btn" href="#reg">Начать регистрацию</a></div></div>';return;}
-  let h='<div class="card"><div class="top"><h2>'+esc(master.name)+'</h2>'+(master.blocked?'<span class="chip r">Заблокирован</span>':master.approved?'<span class="chip g">Анкета одобрена</span>':'<span class="chip w">На проверке</span>')+'</div><div class="small">'+rateLine(master)+'</div><div>'+badges(master)+'</div>'+(master.approved?'<a class="small" href="#m-'+master.id+'">Открыть публичный профиль</a>':'<p class="muted small">Пока анкета на проверке, новые заявки не видны. Мы позвоним по номеру из «Ваших данных».</p>')+'</div>';
-  if(master.approved&&!master.blocked) h+='<div class="tabs"><button data-mt="feed" class="'+(mTab==="feed"?"on":"")+'">Новые заявки</button><button data-mt="jobs" class="'+(mTab==="jobs"?"on":"")+'">Мои заказы</button><button data-mt="offers" class="'+(mTab==="offers"?"on":"")+'">Мои отклики</button><button data-mt="revs" class="'+(mTab==="revs"?"on":"")+'">Отзывы</button><button data-mt="form" class="'+(mTab==="form"?"on":"")+'">Анкета и фото</button></div><div id="mt"></div>';
-  else h+='<div id="mt"></div>';
+  const ok=master.approved&&!master.blocked;
+  let h='<div class="card mhead"><div class="top"><h2>'+esc(master.name)+'</h2>'+(master.blocked?'<span class="chip r">Заблокирован</span>':master.approved?'<span class="chip g">Анкета одобрена</span>':'<span class="chip w">На проверке</span>')+'</div><div class="small">'+rateLine(master)+' · <span id="mdue"></span></div><div>'+badges(master)+'</div>'+(master.approved?'<a class="small" href="#m-'+master.id+'">Открыть публичный профиль</a>':'<p class="muted small">Пока анкета на проверке, новые заявки не видны. Мы позвоним по номеру из «Ваших данных».</p>')+'</div>';
+  if(!ok&&!["form","help"].includes(mTab))mTab="form";
+  h+='<div class="mlay"><nav class="mnav">'+MMENU.filter(([k])=>ok||["form","help"].includes(k)).map(([k,t])=>'<button data-mt="'+k+'" class="'+(mTab===k?"on":"")+'">'+t+'</button>').join("")+'</nav><div id="mt"></div></div>';
   T.innerHTML=h;
-  if(master.approved&&!master.blocked){T.querySelectorAll("[data-mt]").forEach(b=>b.onclick=()=>{mTab=b.dataset.mt;tMaster();});
-    mTab==="feed"?tFeed():mTab==="jobs"?tJobs():mTab==="offers"?tOffers():mTab==="revs"?tRevs():profileEditor();}
-  else profileEditor();
+  T.querySelectorAll("[data-mt]").forEach(b=>b.onclick=()=>{mTab=b.dataset.mt;tMaster();});
+  sb.from("requests").select("commission,commission_paid,status").eq("master_id",uid()).then(({data})=>{const due=(data||[]).filter(r=>r.status==="done"&&!r.commission_paid).reduce((a,r)=>a+(+r.commission||0),0);const e=$("#mdue");if(e)e.innerHTML='Комиссия к оплате: <b>'+due.toFixed(2)+' BYN</b>';});
+  ({feed:tFeed,jobs:tJobs,offers:tOffers,revs:tRevs,form:profileEditor,pay:tPay,msgs:tMsgs,stat:tStat,help:tHelp}[mTab]||tFeed)();
+}
+async function tPay(){
+  const T=$("#mt");T.innerHTML='<div class="empty">Загрузка…</div>';
+  const {data,error}=await sb.from("requests").select("id,service,city,price_final,commission,commission_paid,status,created_at").eq("master_id",uid()).eq("status","done").order("created_at",{ascending:false});
+  if(error)return fail(error);
+  const unpaid=data.filter(r=>!r.commission_paid&&+r.commission>0),paid=data.filter(r=>r.commission_paid);
+  const row=r=>'<div class="card"><div class="top"><b>'+esc(r.service)+'</b><span class="chip '+(r.commission_paid?'g':'w')+'">'+(r.commission_paid?'Оплачено':'К оплате')+'</span></div><div class="small muted">Заявка № '+r.id+' · '+esc(r.city||"")+' · '+dt(r.created_at)+'</div><div class="small">Сумма заказа: <b>'+(+r.price_final||0).toFixed(2)+' BYN</b> · комиссия: <b>'+(+r.commission||0).toFixed(2)+' BYN</b></div></div>';
+  T.innerHTML='<div class="card"><h2>Оплата комиссии</h2><p class="small muted">Комиссия начисляется только с выполненных заказов. Онлайн-оплата картой скоро появится — пока оплата по реквизитам, администратор отмечает её вручную.</p><div class="top"><span>К оплате: <b>'+unpaid.reduce((a,r)=>a+(+r.commission||0),0).toFixed(2)+' BYN</b></span><span class="small muted">Оплачено: '+paid.reduce((a,r)=>a+(+r.commission||0),0).toFixed(2)+' BYN</span></div></div>'
+    +(unpaid.length?'<h3>Неоплаченные</h3>'+unpaid.map(row).join(""):'<div class="empty">Неоплаченных счетов нет</div>')+(paid.length?'<h3>Оплаченные</h3>'+paid.map(row).join(""):"");
+}
+async function tMsgs(){
+  const T=$("#mt");T.innerHTML='<div class="empty">Загрузка…</div>';
+  const [{data:o},{data:j}]=await Promise.all([sb.from("offers").select("request_id").eq("master_id",uid()),sb.from("requests").select("id,service,city,status").eq("master_id",uid())]);
+  const ids=[...new Set([...(o||[]).map(x=>x.request_id),...(j||[]).map(x=>x.id)])];
+  if(!ids.length){T.innerHTML='<div class="empty">Переписка появится, когда вы откликнетесь на заявку.</div>';return;}
+  const tasks=((await sb.from("public_tasks").select("id,service,city,status").in("id",ids)).data||[]);
+  const mine=new Map((j||[]).map(r=>[r.id,r]));
+  const list=ids.map(id=>mine.get(id)||tasks.find(t=>t.id===id)).filter(Boolean);
+  T.innerHTML=list.map(r=>'<div class="card"><div class="top"><b>'+esc(r.service)+'</b><button class="btn sm" data-chat="'+r.id+'|'+uid()+'|'+esc(r.service)+'">Открыть чат</button></div><div class="small muted">Заявка № '+r.id+' · '+esc(r.city||"")+(mine.has(r.id)?' · вы исполнитель':'')+'</div></div>').join("");
+}
+let statDays=30;
+async function tStat(){
+  const T=$("#mt");T.innerHTML='<div class="empty">Загрузка…</div>';
+  const since=statDays?new Date(Date.now()-statDays*864e5).toISOString():"1970-01-01";
+  const [{data:o},{data:j}]=await Promise.all([sb.from("offers").select("id,request_id,created_at").eq("master_id",uid()).gte("created_at",since),sb.from("requests").select("id,status,created_at").eq("master_id",uid()).gte("created_at",since)]);
+  const offers=(o||[]).length,chosen=(j||[]).length,done=(j||[]).filter(r=>r.status==="done").length,canc=(j||[]).filter(r=>r.status==="cancelled").length;
+  const box=(n,t)=>'<div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:800">'+n+'</div><div class="small muted">'+t+'</div></div>';
+  T.innerHTML='<div class="tabs">'+[[30,"30 дней"],[90,"90 дней"],[365,"Год"],[0,"Весь период"]].map(([d,t])=>'<button data-sd="'+d+'" class="'+(statDays===d?"on":"")+'">'+t+'</button>').join("")+'</div>'
+    +'<div class="grid">'+box(offers?Math.round(chosen/offers*100)+"%":"—","Откликов, где вас выбрали")+box(offers,"Ваших откликов")+box(chosen,"Вы исполнитель")+box(done,"Выполнено")+box(canc,"Отменено")+box(master.reviews_count>0?(+master.rating).toFixed(1):"—","Рейтинг · "+(master.reviews_count||0)+" отзывов")+'</div>';
+  T.querySelectorAll("[data-sd]").forEach(b=>b.onclick=()=>{statDays=+b.dataset.sd;tStat();});
+}
+const MFAQ=[["Как работает desilvo для исполнителя?","Клиенты публикуют задания, вы откликаетесь со своей ценой. Клиент сравнивает отклики и выбирает исполнителя — после этого вы видите его контакты и договариваетесь напрямую."],["Кто платит мне за работу?","Клиент, напрямую вам после выполнения. Платформа деньги клиента не принимает."],["За что и когда платится комиссия?","Только за выполненные заказы. После отметки «выполнено» комиссия появляется в разделе «Оплата»."],["Как пройти проверку документов?","Заполните анкету полностью и отметьте налоговый статус. Администратор свяжется с вами и проверит документы — в анкете появятся отметки «Телефон подтверждён» и «Документы проверены»."],["О чём договориться с клиентом до начала работы?","Цена, сроки, материалы, выезд и способ оплаты. Фиксируйте договорённости в чате на сайте — это поможет при споре."],["Что делать, если клиент не отвечает или отменил заказ?","Напишите в чат заявки. Если связи нет больше суток — сообщите администратору, заказ будет отменён без комиссии."],["Что делать при споре или если клиент не оплатил?","Опишите ситуацию администратору через Telegram-бот или по телефону поддержки. Не удаляйте переписку."],["Как работают отзывы?","Отзыв может оставить только клиент, чей заказ вы выполнили. Вы можете публично ответить на отзыв."],["Когда ограничивают доступ к заявкам?","При неоплаченной комиссии, жалобах клиентов, обмане или нарушении правил."]];
+function tHelp(){
+  const T=$("#mt");
+  T.innerHTML='<div class="card"><h2>Поддержка</h2><p class="small muted">Ответы на частые вопросы исполнителей. Не нашли ответ — напишите в Telegram-бот @desilvo_bot или позвоните +375 (25) 616-01-36.</p></div>'+MFAQ.map(([q,a])=>'<details class="card"><summary style="cursor:pointer;font-weight:700">'+esc(q)+'</summary><p style="margin:8px 0 0">'+esc(a)+'</p></details>').join("");
 }
 let mTab="feed",onlyMine=true;
 function bindMF(){
