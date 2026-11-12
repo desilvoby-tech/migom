@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://cnrvmcwvxpwdxduwifed.supabase.co wss://cnrvmcwvxpwdxduwifed.supabase.co https://formsubmit.co; media-src 'self' blob: https:; object-src 'none'; base-uri 'self'; form-action 'self' https://cnrvmcwvxpwdxduwifed.supabase.co; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://cnrvmcwvxpwdxduwifed.supabase.co wss://cnrvmcwvxpwdxduwifed.supabase.co https://formsubmit.co https://get.geojs.io; media-src 'self' blob: https:; object-src 'none'; base-uri 'self'; form-action 'self' https://cnrvmcwvxpwdxduwifed.supabase.co; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Кабинет — desilvo</title><meta name="description" content="Задания и исполнители desilvo: найдите мастера в своём городе или откликайтесь на заказы. Бесплатно для заказчиков, по всей Беларуси."><link rel="canonical" href="https://desilvo.by/app.html"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta property="og:image" content="https://desilvo.by/og.png">
@@ -99,6 +99,7 @@ h1{margin:6px 0 10px}
 </div></header>
 <main class="wrap" id="view"><div class="empty">Загрузка…</div></main>
 <script src="config.js"></script>
+<script src="/geo.js"></script>
 <script src="cats.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
@@ -131,7 +132,9 @@ async function init(){
     else if(oe){alertErr=decodeURIComponent(oe[1]);history.replaceState(null,"",location.pathname+"#me")}}
   session=(await sb.auth.getSession()).data.session;
   sb.auth.onAuthStateChange(async(ev,s)=>{const changed=(s&&s.user.id)!==uid();session=s;if(changed){await load();route();}});
-  await load(); addEventListener("hashchange",route); route();
+  await load();
+  if(window.GEO){window.GEO_COLOR="#4BAE2F";const gs=g=>{if(g&&g.city&&CITIES.includes(g.city)){if(!fCity)fCity=g.city;if(!tCity)tCity=g.city;return true}};window.GEO_SILENT=gs;window.GEO_APPLY=g=>{if(g&&g.city&&CITIES.includes(g.city)){fCity=tCity=g.city;route()}};window.GEO_OTHER=()=>{const s=$("#fc")||$("#tc");if(s){s.focus();try{s.showPicker()}catch(_){}}};GEO.start()}
+  addEventListener("hashchange",route); route();
   $("#logout").onclick=async()=>{await sb.auth.signOut();location.hash="#masters";};
   document.addEventListener("click",e=>{if(e.target.closest("#tgl"))return tgLogin();const b=e.target.closest("[data-chat]");if(b){const [r,m,t]=b.dataset.chat.split("|");openChat(+r,m,t);}});
 }
@@ -316,7 +319,7 @@ const bd=r=>(r.budget||r.deadline)?'<div class="small"><b>'+(r.budget?'Бюдж�
 let tCity="",tSvc="";
 async function vTasks(){
   V.innerHTML='<div class="top"><h1>Задания</h1><a class="btn sm" href="index.html#order">Создать задание</a></div><div class="card fbar"><div class="row"><label>Город<select id="tc"><option value="">Все города</option>'+opts(CITIES,tCity)+'</select></label><label>Услуга<select id="ts"><option value="">Все услуги</option>'+opts(SERVICES,tSvc)+'</select></label></div></div><div id="tl" style="display:grid;gap:14px"><div class="empty">Загрузка…</div></div>';
-  $("#tc").onchange=e=>{tCity=e.target.value;vTasks();};$("#ts").onchange=e=>{tSvc=e.target.value;vTasks();};
+  $("#tc").onchange=e=>{tCity=e.target.value;if(window.GEO&&tCity)GEO.set("",tCity);vTasks();};$("#ts").onchange=e=>{tSvc=e.target.value;vTasks();};
   let q=sb.from("public_tasks").select("*").order("created_at",{ascending:false}).limit(100);
   if(tCity)q=q.eq("city",tCity);if(tSvc)q=q.eq("service",tSvc);
   const {data,error}=await q;if(error)return fail(error);
@@ -621,7 +624,7 @@ async function vMaster(id){
 let fCity="",fSvc="",fSort="rating",fFav=false;
 async function vMasters(){
   V.innerHTML='<h1>Мастера</h1><div class="card fbar"><div class="row"><label>Город<select id="fc"><option value="">Все города</option>'+opts(CITIES,fCity)+'</select></label><label>Услуга<select id="fs"><option value="">Все услуги</option>'+opts(SERVICES,fSvc)+'</select></label><label>Сортировка<select id="fo"><option value="rating"'+(fSort==="rating"?" selected":"")+'>По рейтингу</option><option value="reviews"'+(fSort==="reviews"?" selected":"")+'>По числу отзывов</option><option value="done"'+(fSort==="done"?" selected":"")+'>По выполненным заказам</option><option value="price"'+(fSort==="price"?" selected":"")+'>Сначала дешевле</option></select></label></div>'+(session?'<label style="display:flex;gap:8px;align-items:center;font-weight:600;margin-top:10px"><input type="checkbox" id="ffav" style="width:auto"'+(fFav?' checked':'')+'> Только избранные</label>':'')+'</div><div id="ml" class="grid"><div class="empty">Загрузка…</div></div>';
-  $("#fc").onchange=e=>{fCity=e.target.value;vMasters();};if($("#ffav"))$("#ffav").onchange=e=>{fFav=e.target.checked;vMasters();};$("#fs").onchange=e=>{fSvc=e.target.value;vMasters();};$("#fo").onchange=e=>{fSort=e.target.value;vMasters();};
+  $("#fc").onchange=e=>{fCity=e.target.value;if(window.GEO&&fCity)GEO.set("",fCity);vMasters();};if($("#ffav"))$("#ffav").onchange=e=>{fFav=e.target.checked;vMasters();};$("#fs").onchange=e=>{fSvc=e.target.value;vMasters();};$("#fo").onchange=e=>{fSort=e.target.value;vMasters();};
   document.title=(fSvc||"Исполнители")+(fCity?" — "+fCity:"")+" — desilvo";
   let q=sb.from("masters").select(MCOLS).eq("approved",true).eq("blocked",false).order("is_demo",{ascending:true}).order({rating:"rating",reviews:"reviews_count",done:"done_count",price:"price_from"}[fSort]||"rating",{ascending:fSort==="price",nullsFirst:false}).order("reviews_count",{ascending:false}).limit(100);
   if(fCity)q=q.contains("cities",[fCity]);if(fSvc)q=q.contains("services",[fSvc]);

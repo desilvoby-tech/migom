@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://cnrvmcwvxpwdxduwifed.supabase.co wss://cnrvmcwvxpwdxduwifed.supabase.co https://formsubmit.co; media-src 'self' blob: https:; object-src 'none'; base-uri 'self'; form-action 'self' https://cnrvmcwvxpwdxduwifed.supabase.co; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://cnrvmcwvxpwdxduwifed.supabase.co wss://cnrvmcwvxpwdxduwifed.supabase.co https://formsubmit.co https://get.geojs.io; media-src 'self' blob: https:; object-src 'none'; base-uri 'self'; form-action 'self' https://cnrvmcwvxpwdxduwifed.supabase.co; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>desilvo — найти мастера в Беларуси: ремонт, услуги, цены и отзывы</title>
@@ -237,6 +237,7 @@ footer{border-top:1px solid var(--line);padding-block:36px;color:var(--muted);fo
 <p style="margin-top:24px;font-size:.82rem">© 2026 desilvo · <a href="/politika">Политика обработки персональных данных</a></p>
 </div></footer>
 <script src="config.js"></script>
+<script src="/geo.js"></script>
 <script src="cats.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
@@ -248,6 +249,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 $("#cats").innerHTML=CATS.map(c=>'<details class="cat"><summary><svg viewBox="0 0 24 24">'+c.i+'</svg>'+c.t+'</summary><ul>'+c.c.map(k=>'<li class="small muted" style="margin-top:8px;font-weight:600">'+esc(k.t)+'</li>'+k.s.map(s=>'<li><button type="button" data-svc="'+esc(s.t)+'">'+esc(s.t)+'</button></li>').join("")).join("")+'</ul></details>').join("");
 $("#svcList").innerHTML=CATS.flatMap(c=>c.s).map(s=>'<option value="'+esc(s)+'">').join("");
 $("#o-area").innerHTML=CITIES.map(c=>'<option>'+c+'</option>').join("");
+if(window.GEO){window.GEO_COLOR="#4BAE2F";const gsel=g=>{if(g&&g.city&&CITIES.includes(g.city))$("#o-area").value=g.city};window.GEO_SILENT=gsel;window.GEO_APPLY=gsel;window.GEO_OTHER=()=>{};setTimeout(()=>GEO.start(),600);$("#o-area").addEventListener("change",e=>{if(e.target.value!=="Другой город")GEO.set("",e.target.value)})}
 $("#o-deadline").min=new Date().toISOString().slice(0,10);
 function goOrder(svc){ location.href="app.html#new"+(svc?"-"+encodeURIComponent(svc):""); return;  if(svc) $("#o-svc").value=svc; $("#order").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"}); setTimeout(()=>$(svc?"#o-desc":"#o-svc").focus({preventScroll:true}),400); }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-svc]"); if(b) goOrder(b.dataset.svc);});
