@@ -3,6 +3,6 @@
 window.MIGOM = {
   url: "https://cnrvmcwvxpwdxduwifed.supabase.co",
   key: "sb_publishable_EVnVWfQ6oNnSv2EkRoCc6w_eyoNRpdq",
-  yandex: false,  // включить после настройки функции oauth
+  yandex: true,   // включить после настройки функции oauth
   mailru: false
 };
