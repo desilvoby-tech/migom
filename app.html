@@ -2,11 +2,11 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://mc.yandex.ru https://mc.yandex.by https://yastatic.net https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://mc.yandex.ru https://mc.yandex.by wss://mc.yandex.ru https://cnrvmcwvxpwdxduwifed.supabase.co wss://cnrvmcwvxpwdxduwifed.supabase.co https://formsubmit.co https://get.geojs.io; media-src 'self' blob: https:; frame-src 'self' https://mc.yandex.ru https://mc.yandex.by; object-src 'none'; base-uri 'self'; form-action 'self' https://cnrvmcwvxpwdxduwifed.supabase.co; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://mc.yandex.ru https://mc.yandex.by https://yastatic.net; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https://mc.yandex.ru https://mc.yandex.by wss://mc.yandex.ru https://api.desilvo.by wss://api.desilvo.by https://formsubmit.co; media-src 'self' blob: https:; frame-src 'self' https://mc.yandex.ru https://mc.yandex.by; object-src 'none'; base-uri 'self'; form-action 'self' https://api.desilvo.by; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Кабинет — desilvo</title><meta name="description" content="Задания и исполнители desilvo: найдите мастера в своём городе или откликайтесь на заказы. Бесплатно для заказчиков, по всей Беларуси."><link rel="canonical" href="https://desilvo.by/app.html"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta property="og:image" content="https://desilvo.by/og.png">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Manrope:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/fonts.css?v=20261116">
 <style>@font-face{font-family:"BYN";src:url(/byn.woff) format("woff");unicode-range:U+0183;font-display:swap}
 :root{--bg:#F4F6F9;--surface:#fff;--ink:#101A33;--fg:#141B2D;--muted:#5B6478;--line:#DDE2EB;--spark:#4BAE2F;--teal:#0F8A7E;--danger:#C23B2E;--ok:#1E8E4E;
 --display:"BYN","Unbounded","Manrope",system-ui,sans-serif;--body:"BYN","Manrope",system-ui,-apple-system,"Segoe UI",sans-serif}
@@ -84,7 +84,7 @@ h1{margin:6px 0 10px}
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <script>if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}))</script>
-<script src="/ym.js" defer></script>
+<script src="/ym.js?v=20261116" defer></script>
 </head>
 <body>
 <header><div class="nav wrap">
@@ -99,10 +99,10 @@ h1{margin:6px 0 10px}
 <button class="btn s sm" id="logout" hidden>Выйти</button>
 </div></header>
 <main class="wrap" id="view"><div class="empty">Загрузка…</div></main>
-<script src="config.js"></script>
-<script src="/geo.js"></script>
+<script src="config.js?v=20261116"></script>
+<script src="/geo.js?v=20261116"></script>
 <script src="cats.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="/supabase.min.js?v=2.45.4"></script>
 <script>
 const CITIES=["Минск","Брест","Витебск","Гомель","Гродно","Могилёв","Барановичи","Бобруйск","Борисов","Пинск","Орша","Мозырь","Солигорск","Новополоцк","Лида","Молодечно","Полоцк","Жлобин","Светлогорск","Речица","Слуцк","Жодино","Другой город"];
 let SERVICES=["Мастер на час","Электрик","Сантехник","Плиточник","Ремонт квартиры","Установка дверей","Ремонт телефона","Ремонт ноутбука","Ремонт компьютера","Ремонт телевизора","Ремонт холодильника","Ремонт стиральной машины","Сборка мебели","Перетяжка мебели","Мебель на заказ","Генеральная уборка","Мойка окон","Химчистка мебели","Маникюр","Парикмахер","Массаж","Визажист","Наращивание ресниц","Репетитор по математике","Репетитор по английскому","Подготовка к ЦЭ","Автоэлектрик","Шиномонтаж","Ремонт авто","Фотограф","Видеограф","Ведущий","Аниматор","Няня","Сиделка","Грузчики","Переезд","Психолог","Другое"];
@@ -686,8 +686,8 @@ init().catch(fail);
 /* Реквизиты и cookie-баннер (12.11.2026) */
 (function(){
 var REQ="ИП Купцов Д. И., УНП 491544930. 246003, г. Гомель, ул. Рогачёвская, 13, офис 2. ";
-function add(){var f=document.querySelector("footer");var r=document.createElement("div");r.className="site-req";r.style.cssText="font-size:12px;opacity:.75;margin-top:8px;padding:0 16px 8px;text-align:inherit";r.innerHTML=REQ+'<a href="/politika">Политика обработки персональных данных</a>';if(f){(f.querySelector(".wrap")||f).appendChild(r)}else{r.style.cssText+=";text-align:center;padding:24px 16px";document.body.appendChild(r)}
-try{if(localStorage.getItem("ck_ok"))return}catch(_){}
+function add(){var f=document.querySelector("footer");var r=document.createElement("div");r.className="site-req";r.style.cssText="font-size:12px;opacity:.75;margin-top:8px;padding:0 16px 8px;text-align:inherit";r.innerHTML=REQ+'<a href="/rekvizity">Реквизиты</a> · <a href="/politika">Политика обработки персональных данных</a>';if(f){(f.querySelector(".wrap")||f).appendChild(r)}else{r.style.cssText+=";text-align:center;padding:24px 16px";document.body.appendChild(r)}
+return;
 var d=document.createElement("div");d.className="ckb";d.setAttribute("role","region");d.setAttribute("aria-label","Уведомление о cookie");
 d.innerHTML='<p>Мы используем cookie и локальное хранилище браузера для работы сайта (вход в аккаунт, черновики, настройки) и для обезличенной статистики посещений (Яндекс.Метрика). Рекламные cookie не используем. Подробнее — в <a href="/politika">Политике обработки персональных данных</a>.</p><button type="button">Понятно</button>';
 d.querySelector("button").onclick=function(){try{localStorage.setItem("ck_ok",String(Date.now()))}catch(_){}d.remove()};
