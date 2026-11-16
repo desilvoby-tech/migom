@@ -208,5 +208,5 @@ function ask(g,how){css();var o=document.querySelector(".geob");if(o)o.remove();
   document.body.appendChild(d)}
 window.GEO={get:get,set:function(region,city){set({region:region||"",city:city||"",ts:Date.now()})},nearest:nearest,
   start:function(){var s=get();if(s){if(!s.skip&&window.GEO_APPLY&&window.GEO_SILENT)window.GEO_SILENT(s);return}
-    fetch("https://get.geojs.io/v1/ip/geo.json").then(function(r){return r.json()}).then(function(j){if(!j||j.country_code!=="BY")return;var g=nearest(+j.latitude,+j.longitude);if(g)ask(g,"ip")}).catch(function(){})}};
+    /* город: вручную или по геолокации браузера по кнопке; IP-сервисы не используются (16.11.2026) */}};
 })();
