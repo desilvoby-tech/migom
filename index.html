@@ -225,14 +225,14 @@ footer{border-top:1px solid var(--line);padding-block:36px;color:var(--muted);fo
 <details class="q"><summary>Как платить?</summary><p>Напрямую мастеру после работы — наличными или переводом, как договоритесь.</p></details>
 <details class="q"><summary>Можно ли задать мастеру вопрос до выбора?</summary><p>Да. После отклика у каждого мастера есть кнопка «Написать» — переписка идёт в кабинете на сайте.</p></details>
 <details class="q"><summary>Мастера — ваши сотрудники?</summary><p>Нет. Это частные специалисты, ИП и ремесленники. Мы проверяем их данные и следим за отзывами.</p></details>
-<details class="q"><summary>Что делать, если возникла проблема?</summary><p>Сначала обсудите её с мастером. Если не получилось договориться, позвоните нам — разберёмся вместе.</p></details>
+<details class="q"><summary>Что делать, если возникла проблема?</summary><p>Сначала обсудите её с мастером. Если не получилось договориться, позвоните нам — разберёмся вместе. Подробнее о проверке мастеров и честных отзывах — на странице <a href="/bezopasnost">«Безопасность»</a>.</p></details>
 </div>
 </div></section>
 </main>
 <footer><div class="wrap">
 <div class="foot">
 <div><a class="logo" href="#top"><img src="/logo.svg" alt="" width="32" height="32">desilvo</a><p style="margin-top:10px;max-width:30em">Сервис поиска мастеров по всей Беларуси.</p></div>
-<div><h3>Клиентам</h3><ul><li><a href="#order">Создать задание</a></li><li><a href="app.html#masters">Мастера</a></li><li><a href="/uslugi/">Услуги по городам</a></li><li><a href="/ceny">Цены на услуги</a></li><li><a href="app.html#reg">Стать исполнителем</a></li><li><a href="#how">Как это работает</a></li><li><a href="#faq">Вопросы</a></li></ul></div>
+<div><h3>Клиентам</h3><ul><li><a href="#order">Создать задание</a></li><li><a href="app.html#masters">Мастера</a></li><li><a href="/uslugi/">Услуги по городам</a></li><li><a href="/ceny">Цены на услуги</a></li><li><a href="app.html#reg">Стать исполнителем</a></li><li><a href="#how">Как это работает</a></li><li><a href="#faq">Вопросы</a></li><li><a href="/bezopasnost">Безопасность</a></li></ul></div>
 <div><h3>Популярное</h3><ul><li><a href="/uslugi/remont-telefona-minsk">Ремонт телефона в Минске</a></li><li><a href="/uslugi/remont-telefona-gomel">Ремонт телефона в Гомеле</a></li><li><a href="/uslugi/elektrik-minsk">Электрик в Минске</a></li><li><a href="/uslugi/santehnik-gomel">Сантехник в Гомеле</a></li><li><a href="/uslugi/remont-kompyutera-gomel">Ремонт компьютера в Гомеле</a></li></ul></div>
 <div><h3>Контакты</h3><ul><li style="user-select:all">+375 (25) 616-01-36</li><li style="user-select:all">info@desilvo.by</li><li>Ежедневно 8:00–21:00</li><li>Вся Беларусь</li></ul></div>
 </div>
@@ -295,8 +295,8 @@ const SB=(window.MIGOM&&MIGOM.key&&window.supabase)?supabase.createClient(MIGOM.
 const FORM_URL="https://formsubmit.co/ajax/desilvo.by@gmail.com";
 async function loadFeed(){
   if(!SB){$("#feed").innerHTML='<div class="empty">Задания скоро появятся.</div>';return;}
-  const {data,error}=await SB.from("public_tasks").select("*").order("created_at",{ascending:false}).limit(6);
-  if(error||!data.length){$("#feed").innerHTML='<div class="empty">Пока заданий нет — создайте первое.</div>';return;}
+  const {data,error}=await SB.from("public_tasks").select("*").eq("status","new").gte("created_at",new Date(Date.now()-30*864e5).toISOString()).order("created_at",{ascending:false}).limit(6);
+  if(error||!data.length){$("#feed").innerHTML='<div class="empty">Сейчас открытых заданий нет. <a href="#order">Создайте своё</a> — мастера вашего города получат его в Telegram и предложат цену.</div>';return;}
   $("#feed").innerHTML=data.map(r=>'<div class="task"><div class="top"><h3>'+esc(r.service)+'</h3><span class="price">'+(r.budget?'до '+r.budget+'\u00a0ƃ':'')+'</span></div><div class="meta">'+esc(r.city)+(r.when_text?' · '+esc(r.when_text):'')+'</div>'+(r.description?'<p style="color:var(--muted);font-size:.95rem">'+esc(r.description.slice(0,140))+(r.description.length>140?'…':'')+'</p>':'')+'<div><span class="chip'+(r.status==="new"?'':' g')+'">'+(r.status==="new"?'Ищем мастера · откликов: '+r.offers_count:'Выполняется')+'</span></div></div>').join("");
 }
 loadFeed();
