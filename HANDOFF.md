@@ -101,3 +101,11 @@
 - Триггер tg_master_ins на masters → событие masters:insert → бот пишет админам о новой анкете на проверке.
 - Главная: лента — только открытые задания за 30 дней. Новая страница /bezopasnost.
 - Перенос анкет с redsale/Onliner/Kufar через @desilvo_bot — см. код функции tg на сервере (/opt/sb-desilvo/volumes/functions/tg/index.ts).
+
+## Обновление 19.11.2026 — анкеты мастеров с досок объявлений
+- masters.imported — анкета создана админом по объявлению с доски (с согласия мастера) и ещё не забрана. FK masters.id → profiles снят (вместо него триггер masters_profile_deleted на profiles); все FK на masters(id) теперь ON UPDATE CASCADE.
+- public.master_imports (только через функции админа): source, source_url, chat_url, seller_name, phone, code (6 цифр), claimed_by/claimed_at. claim_attempts — лимит 10 попыток кода в час.
+- RPC (security definer): admin_import_master(p jsonb) → uuid (поля masters + _source/_source_url/_chat_url/_seller_name/_phone), admin_update_master(p_id, p), admin_master_private(p_id, p), admin_imported_masters() → jsonb, admin_claim_code(p_id) → код, claim_master(p_code) → {ok, error|id}. Обход guard-триггеров: set_config('migom.bypass','on') через ds_bypass_val().
+- Политика storage works_admin_all: админ пишет в любую папку бакета works.
+- app.html: блок «Есть код от Десилво?» (кабинет без анкеты и 1-й шаг #reg), в админке «Мастера» — пометка «Перенесена, не забрана» и кнопка «Передать мастеру (код)», в публичной анкете — пометка о переносе. window.dsImport = {create, update, code, setPrivate, list} для плановой задачи.
+- SQL выполняется через Studio api.desilvo.by (basic auth владельца): POST /api/platform/pg-meta/default/query {query}. Скрипт: claude/desilvo-import.sql в проекте «ДЕСИЛВО».
