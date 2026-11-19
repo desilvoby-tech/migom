@@ -1,0 +1,26 @@
+name: SEO-страницы мастеров
+on:
+  schedule:
+    - cron: "37 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: gen-masters
+  cancel-in-progress: false
+jobs:
+  gen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Сгенерировать страницы /master/
+        run: python3 tools/gen_masters.py
+      - name: Сохранить изменения
+        run: |
+          git add -A master mastera.html sitemap-masters.xml robots.txt uslugi
+          if git diff --cached --quiet; then echo "Без изменений"; exit 0; fi
+          git config user.name "desilvo-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Обновление страниц мастеров"
+          git push
