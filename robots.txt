@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
 Sitemap: https://desilvo.by/sitemap.xml
+Sitemap: https://desilvo.by/sitemap-masters.xml
