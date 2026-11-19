@@ -142,6 +142,10 @@ def index_page(ms):
 ML_RE = re.compile(r'(<div id="ml"[^>]*data-svc="([^"]*)" data-city="([^"]*)">)(?:<div class="empty">Загрузка мастеров…</div>|<!--ssr-->.*?<!--/ssr-->)(</div>)', re.S)
 
 
+ROBOTS_RE = re.compile(r'<meta name="robots" content="[^"]*"\s*/?>')
+NOINDEX = []
+
+
 def inject_uslugi(ms):
     d = os.path.join(ROOT, "uslugi")
     if not os.path.isdir(d):
@@ -152,17 +156,25 @@ def inject_uslugi(ms):
             continue
         p = os.path.join(d, f)
         t = open(p, encoding="utf-8").read()
-
-        def rep(mm):
-            svc, city = html.unescape(mm.group(2)), html.unescape(mm.group(3))
-            hits = [m for m in ms if svc in (m.get("services") or []) and (not city or city in (m.get("cities") or []))][:12]
-            if not hits:
-                return mm.group(1) + '<div class="empty">Загрузка мастеров…</div>' + mm.group(4)
+        mm = ML_RE.search(t)
+        if not mm:
+            continue
+        svc, city = html.unescape(mm.group(2)), html.unescape(mm.group(3))
+        hits = [m for m in ms if svc in (m.get("services") or []) and (not city or city in (m.get("cities") or []))][:12]
+        if hits:
             cards = "".join('<a class="card" href="/master/%s"><b>%s</b> <span class="muted">%s</span></a>' % (
                 E(m["id"]), E(m.get("name")), E(", ".join(lst(m.get("cities"))))) for m in hits)
-            return mm.group(1) + "<!--ssr-->" + cards + "<!--/ssr-->" + mm.group(4)
-
-        t2 = ML_RE.sub(rep, t, count=1)
+            block = mm.group(1) + "<!--ssr-->" + cards + "<!--/ssr-->" + mm.group(4)
+        else:
+            block = mm.group(1) + '<div class="empty">Загрузка мастеров…</div>' + mm.group(4)
+        t2 = t[:mm.start()] + block + t[mm.end():]
+        if city:
+            # страница «услуга + город»: без мастеров в этом городе — noindex,follow до появления первого
+            # (у этих страниц изначально нет своего meta robots — индексируются по умолчанию)
+            t2 = ROBOTS_RE.sub("", t2)
+            if not hits:
+                t2 = t2.replace('<meta charset="utf-8">', '<meta charset="utf-8"><meta name="robots" content="noindex,follow">', 1)
+                NOINDEX.append(f)
         if t2 != t:
             open(p, "w", encoding="utf-8").write(t2)
             n += 1
@@ -199,7 +211,8 @@ def main():
     r = open(rp, encoding="utf-8").read()
     if "sitemap-masters.xml" not in r:
         open(rp, "w", encoding="utf-8").write(r.rstrip("\n") + "\nSitemap: %s/sitemap-masters.xml\n" % SITE)
-    print("masters:", len(ms), "indexable:", sum(1 for m in ms if not is_thin(m)), "uslugi updated:", inject_uslugi(ms))
+    print("masters:", len(ms), "indexable:", sum(1 for m in ms if not is_thin(m)), "uslugi updated:", inject_uslugi(ms),
+          "city pages without masters (noindex):", len(NOINDEX))
 
 
 if __name__ == "__main__":
