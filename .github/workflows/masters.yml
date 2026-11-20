@@ -16,6 +16,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Сгенерировать страницы /master/
         run: python3 tools/gen_masters.py
+      - name: SEO-тексты в /uslugi/
+        run: python3 tools/seo_text_uslugi.py
       - name: Сохранить изменения
         run: |
           git add -A master mastera.html sitemap-masters.xml robots.txt uslugi
