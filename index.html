@@ -280,15 +280,34 @@ function attachSuggest(inp,getItems,onPick){
 }
 
 const DSVC=(window.DCAT||[]).flatMap(sec=>(sec.c||[]).flatMap(c=>(c.s||[]).map(x=>({t:x.t,c:c.t,v:(x.v||[]).map(String)}))));
-function desilvoSuggest(q,hl){
-  const ql=q.toLowerCase(),a=[],b=[],seen=new Set();
-  for(const x of DSVC){if(seen.has(x.t))continue;const n=x.t.toLowerCase();
-    if(n.startsWith(ql)){a.push({svc:x.t,html:"<span>"+hl(x.t,q)+'</span><span class="sg-c">'+esc(x.c)+"</span>"});seen.add(x.t)}
-    else if(n.includes(ql)){b.push({svc:x.t,html:"<span>"+hl(x.t,q)+'</span><span class="sg-c">'+esc(x.c)+"</span>"});seen.add(x.t)}
-    else{const v=x.v.find(w=>w.toLowerCase().includes(ql));if(v){b.push({svc:x.t,html:"<span>"+esc(x.t)+'</span><span class="sg-c">'+hl(v,q)+"</span>"});seen.add(x.t)}}}
-  return [...a,...b];
-}
-attachSuggest($("#heroQuery"),desilvoSuggest,it=>{$("#heroQuery").value=it.svc;goOrder(it.svc)});
+/* Поиск услуг v2 (23.11.2026): ё/е, основа слова, опечатки, раскладка, без совпадений внутри слова */
+const dsNorm=s=>String(s).toLowerCase().replace(/ё/g,"е").replace(/[^a-zа-я0-9]+/g," ").trim();
+const DS_EN="qwertyuiop[]asdfghjkl;'zxcvbnm,.`",DS_RU="йцукенгшщзхъфывапролджэячсмитьбюё";
+const dsLayout=s=>/^[a-z\[\];',.`\s]+$/.test(s)?s.replace(/./g,c=>{const i=DS_EN.indexOf(c);return i<0?c:DS_RU[i]}):s;
+const dsStem=w=>w.length>=5?w.slice(0,Math.max(4,w.length-2)):w;
+const dsLev1=(a,b)=>{if(Math.abs(a.length-b.length)>1)return false;let i=0,j=0,e=0;
+  while(i<a.length&&j<b.length){if(a[i]===b[j]){i++;j++;continue}if(++e>1)return false;
+    if(a.length>b.length)i++;else if(b.length>a.length)j++;else{i++;j++}}
+  return e+(a.length-i)+(b.length-j)<=1};
+const DS_IDX=DSVC.map(x=>({x,name:dsNorm(x.t).split(" "),syn:dsNorm(x.v.join(" ")+" "+x.c).split(" ")}));
+function dsHit(q,words,fuzzy){const s=dsStem(q);let best=0;
+  for(const w of words){if(w.startsWith(q))return 3;if(w.startsWith(s))best=Math.max(best,2);
+    else if(fuzzy&&q.length>=5&&dsLev1(q,w.slice(0,q.length)))best=Math.max(best,1)}
+  return best}
+function dsSearch(qs,fuzzy){const out=[];
+  for(const it of DS_IDX){let sc=0,ok=true;
+    for(const t of qs){const n=dsHit(t,it.name,fuzzy),v=dsHit(t,it.syn,fuzzy);if(!n&&!v){ok=false;break}sc+=n*3+v}
+    if(ok)out.push({it,sc})}
+  return out.sort((a,b)=>b.sc-a.sc||a.it.x.t.length-b.it.x.t.length)}
+function desilvoSuggest(raw){
+  const q=raw.trim();
+  const qs=dsNorm(dsLayout(q.toLowerCase())).split(" ").filter(Boolean);if(!qs.length)return [];
+  let res=dsSearch(qs,false);if(!res.length)res=dsSearch(qs,true);
+  const items=res.slice(0,8).map(({it})=>({svc:it.x.t,html:"<span>"+esc(it.x.t)+'</span><span class="sg-c">'+esc(it.x.c)+"</span>"}));
+  items.push({svc:q,html:"<span>Создать задание «"+esc(q)+"»</span>"+'<span class="sg-c">своими словами</span>'});
+  if(!res.length)items.push({href:"/uslugi/",html:"<span>Не нашли? Посмотрите все услуги</span>"+'<span class="sg-c">каталог</span>'});
+  return items}
+attachSuggest($("#heroQuery"),desilvoSuggest,it=>{if(it.href){location.href=it.href;return}$("#heroQuery").value=it.svc;goOrder(it.svc)});
 $("#heroSearch").addEventListener("submit",e=>{e.preventDefault(); goOrder($("#heroQuery").value.trim());});
 const phoneOk=v=>v.replace(/\D/g,"").length>=9;
 const SB=(window.MIGOM&&MIGOM.key&&window.supabase)?supabase.createClient(MIGOM.url,MIGOM.key):null;
