@@ -7,4 +7,4 @@ window.MIGOM = {
   mailru: true
 };
 /* qa-fix (27.11.2026): замечания проверки. Чтобы отключить — удалить этот блок. */
-document.addEventListener("DOMContentLoaded",function(){var s=document.createElement("script");s.src="/qa-fix.js?v=1";document.head.appendChild(s)});
+document.addEventListener("DOMContentLoaded",function(){var s=document.createElement("script");s.src="/qa-fix.js?v=2";document.head.appendChild(s)});
